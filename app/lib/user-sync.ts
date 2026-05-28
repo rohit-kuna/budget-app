@@ -19,12 +19,15 @@ export async function syncUserWithDb() {
     throw new Error("Clerk user has no email address");
   }
 
+  const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || email;
+
   // Insert once; no-op for returning users.
   await db
     .insert(users)
     .values({
       clerkUserId,
       email,
+      name,
       role: ROLES.USER,
     })
     .onConflictDoNothing({ target: users.clerkUserId });

@@ -9,12 +9,15 @@ import { desc, eq } from "drizzle-orm";
 type CreateUserInput = {
   clerkUserId: string;
   email: string;
+  name: string;
   role: AppRole;
 };
 
 type UpdateUserInput = Partial<{
   email: string;
+  name: string;
   role: AppRole;
+  orgId: number | null;
 }>;
 
 export async function createUser(input: CreateUserInput) {
@@ -22,7 +25,7 @@ export async function createUser(input: CreateUserInput) {
   return createdUser ?? null;
 }
 
-export async function getUserById(id: number) {
+export async function getUserById(id: string) {
   const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return user ?? null;
 }
@@ -42,7 +45,9 @@ export async function getAllUsers(): Promise<AdminUserTableRow[]> {
       id: users.id,
       clerkUserId: users.clerkUserId,
       email: users.email,
+      name: users.name,
       role: users.role,
+      orgId: users.orgId,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
     })
@@ -50,7 +55,7 @@ export async function getAllUsers(): Promise<AdminUserTableRow[]> {
     .orderBy(desc(users.createdAt));
 }
 
-export async function updateUserById(id: number, input: UpdateUserInput) {
+export async function updateUserById(id: string, input: UpdateUserInput) {
   const [updatedUser] = await db
     .update(users)
     .set(input)
@@ -60,7 +65,7 @@ export async function updateUserById(id: number, input: UpdateUserInput) {
   return updatedUser ?? null;
 }
 
-export async function deleteUserById(id: number) {
+export async function deleteUserById(id: string) {
   const [deletedUser] = await db
     .delete(users)
     .where(eq(users.id, id))

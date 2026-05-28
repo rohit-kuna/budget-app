@@ -16,7 +16,7 @@ export async function getAllUsersForAdmin(): Promise<AdminUserTableRow[]> {
 /**
  * Admin-scoped role update.
  */
-export async function promoteUserToAdmin(userId: number) {
+export async function promoteUserToAdmin(userId: string) {
   await requireAdmin();
   await updateUserById(userId, { role: ROLES.ADMIN });
   return { success: true };
