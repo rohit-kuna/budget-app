@@ -18,10 +18,10 @@ export function OrganizationSettings({ data }: OrganizationSettingsProps) {
   return (
     <section className="grid gap-6 lg:grid-cols-2">
       <Card className="py-2">
-        <CardHeader className="px-8 pt-8">
+        <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
           <CardTitle className="text-2xl tracking-tight">Organization setup</CardTitle>
         </CardHeader>
-        <CardContent className="px-8 pb-8">
+        <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
           {data.organization ? (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
@@ -53,19 +53,19 @@ export function OrganizationSettings({ data }: OrganizationSettingsProps) {
       </Card>
 
       <Card className="py-2">
-        <CardHeader className="px-8 pt-8">
+        <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
           <CardTitle className="text-2xl tracking-tight">Invite link</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 px-8 pb-8">
+        <CardContent className="space-y-4 px-4 pb-6 sm:px-8 sm:pb-8">
           {inviteLink ? (
             <>
               <div className="rounded-lg border bg-muted/30 p-4 font-mono text-sm break-all">
                 {inviteLink}
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <CopyInviteLinkButton inviteLink={inviteLink} />
                 <form action={regenerateOrganizationInviteAction}>
-                  <Button type="submit" variant="outline">
+                  <Button type="submit" variant="outline" className="w-full sm:w-auto">
                     Regenerate link
                   </Button>
                 </form>

@@ -5,7 +5,7 @@ export default async function CategoriesPage() {
   const financeData = await getOrganizationCategoriesForAdmin();
 
   return (
-    <main className="mx-auto w-full max-w-7xl p-6">
+    <main className="mx-auto w-full max-w-7xl p-4 sm:p-6">
       <CategoryManagement categories={financeData.categories} />
     </main>
   );

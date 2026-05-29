@@ -90,9 +90,9 @@ function BudgetEditor({
 }) {
   return (
     <div className="rounded-lg border bg-muted/20 p-4">
-        <form action={updateAction} className="space-y-4">
+      <form action={updateAction} className="space-y-4">
         <input type="hidden" name="budgetId" value={budget.id} />
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Category</Label>
             <CategorySelect categories={categories} name="categoryId" defaultValue={budget.categoryId} />
@@ -108,8 +108,8 @@ function BudgetEditor({
         </div>
         <p className="text-sm text-muted-foreground">{budget.monthLabel}</p>
         <ActionError message={updateError} />
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit" disabled={updatePending}>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button type="submit" disabled={updatePending} className="w-full sm:w-auto">
             {updatePending ? "Saving..." : "Save"}
           </Button>
         </div>
@@ -117,7 +117,7 @@ function BudgetEditor({
       <form action={deleteAction} className="mt-3">
         <input type="hidden" name="budgetId" value={budget.id} />
         <ActionError message={deleteError} />
-        <Button type="submit" variant="outline" className="mt-2" disabled={deletePending}>
+        <Button type="submit" variant="outline" className="mt-2 w-full sm:w-auto" disabled={deletePending}>
           <Trash2 className="mr-2 size-4" />
           {deletePending ? "Deleting..." : "Delete"}
         </Button>
@@ -201,10 +201,10 @@ function PersonalBudgetSection({
   if (!categories.length) {
     return (
       <Card className="py-2">
-        <CardHeader className="px-8 pt-8">
+        <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
           <CardTitle className="text-2xl tracking-tight">Personal budgets</CardTitle>
         </CardHeader>
-        <CardContent className="px-8 pb-8">
+        <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
           <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
             Ask an admin to create categories before adding budgets.
           </div>
@@ -215,11 +215,11 @@ function PersonalBudgetSection({
 
   return (
     <Card className="py-2">
-      <CardHeader className="px-8 pt-8">
+      <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
         <CardTitle className="text-2xl tracking-tight">Personal budgets</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 px-8 pb-8">
-        <form action={createAction} className="grid gap-4 rounded-lg border border-primary/20 bg-primary/5 p-4 md:grid-cols-2">
+      <CardContent className="space-y-4 px-4 pb-6 sm:px-8 sm:pb-8">
+        <form action={createAction} className="grid gap-4 rounded-lg border border-primary/20 bg-primary/5 p-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Category</Label>
             <CategorySelect categories={categories} name="categoryId" />
@@ -232,9 +232,9 @@ function PersonalBudgetSection({
             <Label htmlFor="personal-month">Budget month</Label>
             <Input id="personal-month" name="month" type="month" required />
           </div>
-          <div className="md:col-span-2">
+          <div className="sm:col-span-2">
             <ActionError message={createState.error} />
-            <Button type="submit" disabled={createPending}>
+            <Button type="submit" disabled={createPending} className="w-full sm:w-auto">
               {createPending ? "Creating..." : "Create personal budget"}
             </Button>
           </div>
@@ -271,10 +271,10 @@ function FamilyBudgetSection({
   if (!categories.length) {
     return (
       <Card className="py-2">
-        <CardHeader className="px-8 pt-8">
+        <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
           <CardTitle className="text-2xl tracking-tight">Family budgets</CardTitle>
         </CardHeader>
-        <CardContent className="px-8 pb-8">
+        <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
           <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
             Create categories before adding family budgets.
           </div>
@@ -285,11 +285,11 @@ function FamilyBudgetSection({
 
   return (
     <Card className="py-2">
-      <CardHeader className="px-8 pt-8">
+      <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
         <CardTitle className="text-2xl tracking-tight">Family budgets</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 px-8 pb-8">
-        <form action={createAction} className="grid gap-4 rounded-lg border border-primary/20 bg-primary/5 p-4 md:grid-cols-2">
+      <CardContent className="space-y-4 px-4 pb-6 sm:px-8 sm:pb-8">
+        <form action={createAction} className="grid gap-4 rounded-lg border border-primary/20 bg-primary/5 p-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Category</Label>
             <CategorySelect categories={categories} name="categoryId" />
@@ -302,9 +302,9 @@ function FamilyBudgetSection({
             <Label htmlFor="family-month">Budget month</Label>
             <Input id="family-month" name="month" type="month" required />
           </div>
-          <div className="md:col-span-2">
+          <div className="sm:col-span-2">
             <ActionError message={createState.error} />
-            <Button type="submit" disabled={createPending}>
+            <Button type="submit" disabled={createPending} className="w-full sm:w-auto">
               {createPending ? "Creating..." : "Create family budget"}
             </Button>
           </div>
@@ -331,7 +331,7 @@ function SummaryCard({ summary }: { summary: BudgetAllocationSummaryDto }) {
 
   return (
     <Card className="py-2">
-      <CardHeader className="px-8 pt-8">
+      <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-xl tracking-tight">{summary.categoryName}</CardTitle>
           {isOverBudget ? (
@@ -345,8 +345,8 @@ function SummaryCard({ summary }: { summary: BudgetAllocationSummaryDto }) {
         </div>
         <p className="text-sm text-muted-foreground">{summary.monthLabel}</p>
       </CardHeader>
-      <CardContent className="space-y-3 px-8 pb-8">
-        <div className="grid gap-3 sm:grid-cols-3">
+      <CardContent className="space-y-3 px-4 pb-6 sm:px-8 sm:pb-8">
+        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
           <div className="rounded-lg border bg-muted/30 p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Family Budget</p>
             <p className="mt-2 text-lg font-semibold">
@@ -387,7 +387,7 @@ export function BudgetManagement({
   return (
     <section className="space-y-6">
       <Card className="py-2">
-        <CardHeader className="px-8 pt-8">
+        <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
           <CardTitle className="text-3xl tracking-tight">Budgets & allocation</CardTitle>
           <p className="max-w-3xl text-sm text-muted-foreground">
             {showFamilyBudgetSection
@@ -395,9 +395,9 @@ export function BudgetManagement({
               : "Manage your personal budgets here and keep an eye on shared allocation summaries."}
           </p>
         </CardHeader>
-        <CardContent className="px-8 pb-8">
+        <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
           {data.allocationSummaries.length ? (
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               {data.allocationSummaries.map((summary) => (
                 <SummaryCard key={`${summary.categoryId}-${summary.month}`} summary={summary} />
               ))}

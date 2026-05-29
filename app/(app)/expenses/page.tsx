@@ -11,7 +11,7 @@ export default async function ExpensesPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl p-6">
+    <main className="mx-auto w-full max-w-7xl p-4 sm:p-6">
       <ExpenseManagement data={data} />
     </main>
   );

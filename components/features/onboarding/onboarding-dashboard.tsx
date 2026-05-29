@@ -56,7 +56,7 @@ export function OnboardingDashboard() {
   return (
     <section className="grid gap-6 lg:grid-cols-2">
       <Card className="py-2">
-        <CardHeader className="px-8 pt-8">
+        <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
           <div className="mb-4 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
             <KeyRound className="size-5" />
           </div>
@@ -65,7 +65,7 @@ export function OnboardingDashboard() {
             Enter an invite code to join an existing team and open the shared dashboard.
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-8 pb-8">
+        <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
           <form action={joinAction} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="inviteCode">Invite code</Label>
@@ -86,7 +86,7 @@ export function OnboardingDashboard() {
       </Card>
 
       <Card className="py-2">
-        <CardHeader className="px-8 pt-8">
+        <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
           <div className="mb-4 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
             <ShieldPlus className="size-5" />
           </div>
@@ -97,7 +97,7 @@ export function OnboardingDashboard() {
             Start from scratch, become the admin, and manage members from the admin dashboard.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 px-8 pb-8">
+        <CardContent className="space-y-4 px-4 pb-6 sm:px-8 sm:pb-8">
           <form action={createAction} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Organization name</Label>

@@ -112,11 +112,11 @@ export function AuthHeader({ role, hasOrganization }: AuthHeaderProps) {
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-6 py-4 lg:max-w-none lg:px-10 xl:px-14 2xl:px-20">
-        <div className="flex items-center gap-8">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between lg:max-w-none lg:px-10 xl:px-14 2xl:px-20">
+        <div className="flex items-center justify-between gap-3 md:justify-start md:gap-8">
           <AppLogo href={logoHref} />
           {navItems.length ? (
-            <NavigationMenu viewport={false}>
+            <NavigationMenu viewport={false} className="hidden md:block">
               <NavigationMenuList className="justify-start">
                 {navItems.map((item) => (
                   <NavigationMenuItem key={item.label}>
@@ -136,10 +136,50 @@ export function AuthHeader({ role, hasOrganization }: AuthHeaderProps) {
           ) : null}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {navItems.length ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 md:hidden">
+                  Menu
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href={ROUTES.DASHBOARD}>Dashboard</Link>
+                </DropdownMenuItem>
+                {hasOrganization ? (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href={ROUTES.ACTIVITY}>Activity</Link>
+                    </DropdownMenuItem>
+                    {role === ROLES.ADMIN ? (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href={ROUTES.ORGANIZATION}>Organization</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={ROUTES.USERS}>Users</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={ROUTES.CATEGORIES}>Categories</Link>
+                        </DropdownMenuItem>
+                      </>
+                    ) : null}
+                    <DropdownMenuItem asChild>
+                      <Link href={ROUTES.BUDGETS}>Budgets</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={ROUTES.EXPENSES}>Expenses</Link>
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="max-w-56 justify-start gap-2">
+              <Button variant="outline" size="sm" className="max-w-40 justify-start gap-2 sm:max-w-56">
                 {isLoaded ? (
                   <Avatar size="sm">
                     <AvatarImage src={user?.imageUrl} alt={displayName} />

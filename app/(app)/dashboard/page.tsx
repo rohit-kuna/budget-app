@@ -74,7 +74,7 @@ export default async function DashboardPage() {
 
   if (!user.orgId) {
     return (
-      <main className="mx-auto w-full max-w-7xl p-6">
+      <main className="mx-auto w-full max-w-7xl p-4 sm:p-6">
         <div className="mb-6 space-y-2">
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Onboarding
@@ -96,10 +96,10 @@ export default async function DashboardPage() {
   const menuItems = user.role === ROLES.ADMIN ? adminMenuItems : userMenuItems;
 
   return (
-    <main className="mx-auto w-full max-w-7xl p-6">
+    <main className="mx-auto w-full max-w-7xl p-4 sm:p-6">
       <section className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <Card className="py-2">
-          <CardHeader className="px-8 pt-8">
+          <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
             <CardTitle className="text-3xl tracking-tight">
               Welcome back{organization ? `, ${organization.name}` : ""}
             </CardTitle>
@@ -107,8 +107,8 @@ export default async function DashboardPage() {
               Your workspace is ready. Use the dashboard menu to jump into the right area.
             </CardDescription>
           </CardHeader>
-          <CardContent className="px-8 pb-8">
-            <div className="grid gap-4 sm:grid-cols-3">
+          <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               <div className="rounded-lg border bg-muted/30 p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   Organization
@@ -130,16 +130,16 @@ export default async function DashboardPage() {
         </Card>
 
         <Card className="py-2">
-          <CardHeader className="px-8 pt-8">
+          <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
             <CardTitle className="text-xl tracking-tight">Dashboard menu</CardTitle>
             <CardDescription>Pick the section you want to manage next.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3 px-8 pb-8">
+          <CardContent className="grid gap-3 px-4 pb-6 sm:px-8 sm:pb-8">
             {menuItems.map((item) => (
               <div key={item.label} className="rounded-lg border bg-muted/20 p-4">
                 <p className="font-semibold">{item.label}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
-                <Button asChild variant="outline" className="mt-4 w-full justify-start">
+                <Button asChild variant="outline" className="mt-4 w-full justify-start sm:w-auto">
                   <Link href={item.href}>Open {item.label.toLowerCase()}</Link>
                 </Button>
               </div>

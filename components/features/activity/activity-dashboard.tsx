@@ -344,7 +344,7 @@ function ExpenseActivityChart({
 
   return (
     <Card className="py-2">
-      <CardHeader className="space-y-4 px-8 pt-8">
+      <CardHeader className="space-y-4 px-4 pt-6 sm:px-8 sm:pt-8">
         <SectionHeader
           title="Income vs Expense"
           description="Track cash flow over time, compare income and spending by month, and spot when expenses overtake income."
@@ -407,8 +407,8 @@ function ExpenseActivityChart({
         />
       </CardHeader>
 
-      <CardContent className="space-y-6 px-8 pb-8">
-        <div className="grid gap-4 md:grid-cols-3">
+      <CardContent className="space-y-6 px-4 pb-6 sm:px-8 sm:pb-8">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <MetricCard label="Total income" value={formatMoney(totals.income)} tone="success" />
           <MetricCard label="Total expense" value={formatMoney(totals.expense)} tone="danger" />
           <MetricCard
@@ -424,7 +424,7 @@ function ExpenseActivityChart({
           </div>
         ) : (
           <div className="rounded-2xl border bg-muted/10 p-4">
-            <div className="h-[360px] w-full min-w-0 min-h-0">
+            <div className="h-[300px] w-full min-w-0 min-h-0 sm:h-[360px]">
               <BarChart
                 responsive
                 data={chartData}
@@ -432,8 +432,8 @@ function ExpenseActivityChart({
                 style={{ width: "100%", height: "100%" }}
               >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="label" tickMargin={10} />
-                  <YAxis tickFormatter={(value) => formatCompactMoney(Number(value))} width={80} />
+                  <XAxis dataKey="label" tickMargin={10} tick={{ fontSize: 12 }} />
+                  <YAxis tickFormatter={(value) => formatCompactMoney(Number(value))} width={72} tick={{ fontSize: 12 }} />
                   <Tooltip
                     formatter={(value, name) => [formatMoney(Number(value ?? 0)), String(name)]}
                     labelFormatter={(label) => String(label)}
@@ -573,13 +573,13 @@ function BudgetVsActualChart({
 
   return (
     <Card className="py-2">
-      <CardHeader className="space-y-4 px-8 pt-8">
+      <CardHeader className="space-y-4 px-4 pt-6 sm:px-8 sm:pt-8">
         <SectionHeader
           title="Budget vs Actual Spending"
           description="Compare budgeted amounts with real spending by category, then identify remaining amounts and overspend quickly."
         />
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           <div className="space-y-3">
             <Label>Month</Label>
             <input
@@ -604,8 +604,8 @@ function BudgetVsActualChart({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6 px-8 pb-8">
-        <div className="grid gap-4 md:grid-cols-4">
+      <CardContent className="space-y-6 px-4 pb-6 sm:px-8 sm:pb-8">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="Total budget" value={formatMoney(totals.budget)} tone="success" />
           <MetricCard label="Total actual" value={formatMoney(totals.actual)} tone="warning" />
           <MetricCard label="Remaining amount" value={formatMoney(totals.remaining)} tone="default" />
@@ -618,7 +618,7 @@ function BudgetVsActualChart({
           </div>
         ) : chartData.length ? (
           <div className="rounded-2xl border bg-muted/10 p-4">
-            <div className="h-[360px] w-full min-w-0 min-h-0">
+            <div className="h-[300px] w-full min-w-0 min-h-0 sm:h-[360px]">
               <BarChart
                 responsive
                 data={chartData}
@@ -626,8 +626,8 @@ function BudgetVsActualChart({
                 style={{ width: "100%", height: "100%" }}
               >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="categoryName" tickMargin={10} interval={0} />
-                  <YAxis tickFormatter={(value) => formatCompactMoney(Number(value))} width={80} />
+                  <XAxis dataKey="categoryName" tickMargin={10} interval={0} tick={{ fontSize: 12 }} />
+                  <YAxis tickFormatter={(value) => formatCompactMoney(Number(value))} width={72} tick={{ fontSize: 12 }} />
                   <Tooltip
                     formatter={(value, name) => [formatMoney(Number(value ?? 0)), String(name)]}
                     labelFormatter={(label) => String(label)}
@@ -764,13 +764,13 @@ function CategorySpendChart({
 
   return (
     <Card className="py-2">
-      <CardHeader className="space-y-4 px-8 pt-8">
+      <CardHeader className="space-y-4 px-4 pt-6 sm:px-8 sm:pt-8">
         <SectionHeader
           title="Spending by Category"
           description="See which categories consume the most spending, with longer names kept readable through a horizontal layout."
         />
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-3">
             <Label>Month</Label>
             <select
@@ -845,8 +845,8 @@ function CategorySpendChart({
         />
       </CardHeader>
 
-      <CardContent className="space-y-6 px-8 pb-8">
-        <div className="grid gap-4 md:grid-cols-3">
+      <CardContent className="space-y-6 px-4 pb-6 sm:px-8 sm:pb-8">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <MetricCard
             label="Total spending"
             value={formatMoney(totals.totalAmount)}
@@ -874,24 +874,22 @@ function CategorySpendChart({
           </div>
         ) : (
           <div className="rounded-2xl border bg-muted/10 p-4">
-            <div className="h-[420px] w-full min-w-0 min-h-0">
+            <div className="h-[360px] w-full min-w-0 min-h-0 sm:h-[420px]">
               <BarChart
                 responsive
                   data={chartData}
                   layout="vertical"
-                  margin={{ top: 16, right: 32, left: 8, bottom: 0 }}
+                margin={{ top: 16, right: 12, left: 0, bottom: 0 }}
                   style={{ width: "100%", height: "100%" }}
               >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    type="number"
-                    tickFormatter={(value) => formatCompactMoney(Number(value))}
-                  />
+                  <XAxis type="number" tickFormatter={(value) => formatCompactMoney(Number(value))} tick={{ fontSize: 12 }} />
                   <YAxis
                     type="category"
                     dataKey="categoryName"
-                    width={180}
-                    tickMargin={12}
+                    width={96}
+                    tickMargin={6}
+                    tick={{ fontSize: 12 }}
                   />
                   <Tooltip
                     formatter={(value, name, payload) => {
@@ -940,7 +938,7 @@ function CategorySpendChart({
 
                         return (
                           <text
-                            x={labelProps.x + labelProps.width + 12}
+                            x={labelProps.x + labelProps.width + 8}
                             y={labelProps.y + labelProps.height / 2 + 4}
                             fill="currentColor"
                             className="fill-foreground text-xs font-medium"
@@ -1074,13 +1072,13 @@ function NecessitySpendChart({
 
   return (
     <Card className="py-2">
-      <CardHeader className="space-y-4 px-8 pt-8">
+      <CardHeader className="space-y-4 px-4 pt-6 sm:px-8 sm:pt-8">
         <SectionHeader
           title="Spending by Necessity Level"
           description="Break spending down by necessity level each month to see how essential and optional expenses stack up over time."
         />
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           <div className="space-y-3">
             <Label>Month</Label>
             <select
@@ -1113,8 +1111,8 @@ function NecessitySpendChart({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6 px-8 pb-8">
-        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+      <CardContent className="space-y-6 px-4 pb-6 sm:px-8 sm:pb-8">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
           <MetricCard label="Total expense" value={formatMoney(totals.totalExpense)} tone="danger" />
           <MetricCard label="Essential" value={formatMoney(totals.essential)} tone="success" />
           <MetricCard label="Important" value={formatMoney(totals.important)} tone="warning" />
@@ -1129,7 +1127,7 @@ function NecessitySpendChart({
           </div>
         ) : (
           <div className="rounded-2xl border bg-muted/10 p-4">
-            <div className="h-[380px] w-full min-w-0 min-h-0">
+            <div className="h-[320px] w-full min-w-0 min-h-0 sm:h-[380px]">
               <BarChart
                 responsive
                 data={chartData}
@@ -1137,8 +1135,8 @@ function NecessitySpendChart({
                 style={{ width: "100%", height: "100%" }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" tickMargin={10} />
-                <YAxis tickFormatter={(value) => formatCompactMoney(Number(value))} width={80} />
+                <XAxis dataKey="label" tickMargin={10} tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={(value) => formatCompactMoney(Number(value))} width={72} tick={{ fontSize: 12 }} />
                 <Tooltip
                   formatter={(value, name) => [formatMoney(Number(value ?? 0)), String(name)]}
                   labelFormatter={(label) => String(label)}
@@ -1289,7 +1287,7 @@ function ExpenseTrendChart({
 
   return (
     <Card className="py-2">
-      <CardHeader className="space-y-4 px-8 pt-8">
+      <CardHeader className="space-y-4 px-4 pt-6 sm:px-8 sm:pt-8">
         <SectionHeader
           title="Expense Trends Over Time"
           description="Compare the current period against the previous period to understand whether spend is accelerating or slowing down."
@@ -1342,8 +1340,8 @@ function ExpenseTrendChart({
         />
       </CardHeader>
 
-      <CardContent className="space-y-6 px-8 pb-8">
-        <div className="grid gap-4 md:grid-cols-4">
+      <CardContent className="space-y-6 px-4 pb-6 sm:px-8 sm:pb-8">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="Current period" value={formatMoney(totals.currentTotal)} tone="warning" />
           <MetricCard label="Previous period" value={formatMoney(totals.previousTotal)} tone="default" />
           <MetricCard
@@ -1377,7 +1375,7 @@ function ExpenseTrendChart({
         </div>
 
         <div className="rounded-2xl border bg-muted/10 p-4">
-          <div className="h-[380px] w-full min-w-0 min-h-0">
+          <div className="h-[320px] w-full min-w-0 min-h-0 sm:h-[380px]">
             <LineChart
               responsive
               data={chartData}
@@ -1385,8 +1383,8 @@ function ExpenseTrendChart({
               style={{ width: "100%", height: "100%" }}
             >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" tickMargin={10} minTickGap={24} />
-              <YAxis tickFormatter={(value) => formatCompactMoney(Number(value))} width={80} />
+              <XAxis dataKey="label" tickMargin={10} minTickGap={24} tick={{ fontSize: 12 }} />
+              <YAxis tickFormatter={(value) => formatCompactMoney(Number(value))} width={72} tick={{ fontSize: 12 }} />
               <Tooltip
                 formatter={(value, name) => [formatMoney(Number(value ?? 0)), String(name)]}
                 labelFormatter={(label) => String(label)}
@@ -1437,7 +1435,7 @@ export function ActivityDashboard({
   return (
     <section className="space-y-6">
       <Card className="py-2">
-        <CardHeader className="space-y-3 px-8 pt-8">
+        <CardHeader className="space-y-3 px-4 pt-6 sm:px-8 sm:pt-8">
           <Badge variant="secondary" className="w-fit">
             Activity
           </Badge>

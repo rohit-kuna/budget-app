@@ -85,17 +85,17 @@ export function CategoryManagement({
   return (
     <section className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
       <Card className="border-primary/20 bg-primary/5 py-2">
-        <CardHeader className="px-8 pt-8">
+        <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
           <CardTitle className="text-2xl tracking-tight">Create category</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 px-8 pb-8">
+        <CardContent className="space-y-4 px-4 pb-6 sm:px-8 sm:pb-8">
           <form action={createAction} className="space-y-4 rounded-lg border border-primary/20 bg-background/80 p-4">
             <div className="space-y-2">
               <Label htmlFor="categoryName">Category name</Label>
               <Input id="categoryName" name="name" placeholder="Food" required />
             </div>
             <ActionError message={createState.error} />
-            <Button type="submit" disabled={createPending}>
+            <Button type="submit" disabled={createPending} className="w-full sm:w-auto">
               {createPending ? "Creating..." : "Create category"}
             </Button>
           </form>
@@ -106,10 +106,10 @@ export function CategoryManagement({
       </Card>
 
       <Card className="py-2">
-        <CardHeader className="px-8 pt-8">
+        <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
           <CardTitle className="text-2xl tracking-tight">Organization categories</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 px-8 pb-8">
+        <CardContent className="space-y-3 px-4 pb-6 sm:px-8 sm:pb-8">
           {categories.length ? (
             <div className="grid gap-3">
               {categories.map((category) => (

@@ -14,7 +14,7 @@ export function OrganizationOverview({ data }: OrganizationOverviewProps) {
   return (
     <section className="grid gap-6">
       <Card className="py-2">
-        <CardHeader className="space-y-3 px-8 pt-8">
+        <CardHeader className="space-y-3 px-4 pt-6 sm:px-8 sm:pt-8">
           <Badge variant="secondary" className="w-fit">
             Organization
           </Badge>
@@ -26,7 +26,7 @@ export function OrganizationOverview({ data }: OrganizationOverviewProps) {
             structure.
           </p>
         </CardHeader>
-        <CardContent className="px-8 pb-8">
+        <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
           {data.organization ? (
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-lg border bg-muted/30 p-4">

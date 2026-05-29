@@ -35,20 +35,20 @@ export default async function JoinPage({ params }: JoinPageProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-10">
       <Card className="w-full max-w-xl py-4">
-        <CardHeader className="px-8">
+        <CardHeader className="px-4 sm:px-8">
           <CardTitle className="text-3xl tracking-tight">
             Join {organization.name}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 px-8">
+        <CardContent className="space-y-4 px-4 sm:px-8">
           <p className="text-sm text-muted-foreground">
             Sign in with Google or your email to accept the invite and join the organization.
           </p>
-          <div className="flex flex-wrap gap-2">
-            <Button asChild>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button asChild className="w-full sm:w-auto">
               <Link href={signInUrl}>Sign in</Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="w-full sm:w-auto">
               <Link href={signUpUrl}>Create account</Link>
             </Button>
           </div>

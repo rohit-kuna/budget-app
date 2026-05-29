@@ -24,10 +24,10 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-6 py-4 lg:max-w-none lg:px-10 xl:px-14 2xl:px-20">
-          <div className="flex items-center gap-8">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-4 sm:px-6 lg:max-w-none lg:flex-row lg:items-center lg:justify-between lg:px-10 xl:px-14 2xl:px-20">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-8">
             <AppLogo />
-            <NavigationMenu viewport={false}>
+            <NavigationMenu viewport={false} className="hidden lg:block">
               <NavigationMenuList className="justify-start">
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
@@ -47,25 +47,25 @@ export default async function HomePage() {
               </NavigationMenuList>
             </NavigationMenu>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <ModeToggle />
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="w-full sm:w-auto">
               <Link href={ROUTES.SIGN_IN}>Sign In</Link>
             </Button>
-            <Button asChild>
+            <Button asChild className="w-full sm:w-auto">
               <Link href={ROUTES.SIGN_UP}>Sign Up</Link>
             </Button>
           </div>
         </div>
       </header>
-      <section className="mx-auto flex min-h-[calc(100vh-73px)] w-full max-w-5xl items-center justify-center px-6 text-center lg:max-w-none lg:px-10 xl:px-14 2xl:px-20">
+      <section className="mx-auto flex min-h-[calc(100vh-73px)] w-full max-w-5xl items-center justify-center px-4 text-center sm:px-6 lg:max-w-none lg:px-10 xl:px-14 2xl:px-20">
         <Card className="w-full max-w-xl py-8">
-          <CardHeader className="px-8">
+          <CardHeader className="px-4 sm:px-8">
             <CardTitle className="text-4xl font-bold tracking-tight">
               Welcome
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-8 text-muted-foreground">
+          <CardContent className="px-4 text-muted-foreground sm:px-8">
             Fullstack Next.js management system
           </CardContent>
         </Card>

@@ -12,7 +12,7 @@ export default async function BudgetsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl p-6">
+    <main className="mx-auto w-full max-w-7xl p-4 sm:p-6">
       <BudgetManagement
         data={data}
         showFamilyBudgetSection={data.currentUser.role === ROLES.ADMIN}

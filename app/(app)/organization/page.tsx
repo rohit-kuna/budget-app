@@ -6,7 +6,7 @@ export default async function OrganizationPage() {
   const data = await getAdminDashboardData();
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-6">
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6">
       <OrganizationOverview data={data} />
       <OrganizationSettings data={data} />
     </main>

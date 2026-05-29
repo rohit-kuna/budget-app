@@ -12,13 +12,13 @@ type MemberManagementProps = {
 export function MemberManagement({ data }: MemberManagementProps) {
   return (
     <Card className="py-2">
-      <CardHeader className="px-8 pt-8">
+      <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
         <CardTitle className="text-2xl tracking-tight">Members</CardTitle>
       </CardHeader>
-      <CardContent className="px-8 pb-8">
+      <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
         {data.members.length ? (
-          <div className="overflow-hidden rounded-lg border">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="min-w-[760px] w-full text-sm">
               <thead className="border-b bg-muted/40 text-left">
                 <tr>
                   <th className="px-4 py-3 font-medium">Name</th>
@@ -45,7 +45,7 @@ export function MemberManagement({ data }: MemberManagementProps) {
                     <td className="px-4 py-3 text-muted-foreground">{member.email}</td>
                     <td className="px-4 py-3">{member.role}</td>
                     <td className="px-4 py-3">
-                      <form action={updateOrganizationMemberRoleAction} className="flex gap-2">
+                      <form action={updateOrganizationMemberRoleAction} className="flex flex-col gap-2 sm:flex-row">
                         <input type="hidden" name="userId" value={member.id} />
                         <select
                           name="role"
@@ -55,7 +55,7 @@ export function MemberManagement({ data }: MemberManagementProps) {
                           <option value={ROLES.ADMIN}>ADMIN</option>
                           <option value={ROLES.USER}>USER</option>
                         </select>
-                        <Button type="submit" variant="outline">
+                        <Button type="submit" variant="outline" className="w-full sm:w-auto">
                           Save
                         </Button>
                       </form>

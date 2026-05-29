@@ -228,12 +228,12 @@ function ExpenseFormCard({
 
   return (
     <Card className="border-primary/20 bg-primary/5 py-2">
-      <CardHeader className="px-8 pt-8">
+      <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
         <CardTitle className="text-2xl tracking-tight">
           {isEditing ? "Edit expense" : "Add expense"}
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-8 pb-8">
+      <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
         {!categories.length ? (
           <div className="rounded-lg border border-dashed bg-background/80 p-4 text-sm text-muted-foreground">
             Create categories first, then you can add expenses.
@@ -242,7 +242,7 @@ function ExpenseFormCard({
           <form
             key={editingExpense?.id ?? "new-expense"}
             action={activeAction}
-            className="grid gap-4 rounded-lg border border-primary/20 bg-background/80 p-4 md:grid-cols-2"
+            className="grid gap-4 rounded-lg border border-primary/20 bg-background/80 p-4 sm:grid-cols-2"
           >
             {editingExpense ? <input type="hidden" name="expenseId" value={editingExpense.id} /> : null}
             <div className="space-y-2">
@@ -278,7 +278,7 @@ function ExpenseFormCard({
                 options={expenseModes}
               />
             </div>
-            <div className="grid gap-4 md:col-span-2 md:grid-cols-2">
+            <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Scope</Label>
                 <FormSelect
@@ -301,7 +301,7 @@ function ExpenseFormCard({
                 required
               />
             </div>
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="expense-note">Note</Label>
               <textarea
                 id="expense-note"
@@ -311,19 +311,19 @@ function ExpenseFormCard({
                 className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               />
             </div>
-            <div className="md:col-span-2 flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 sm:col-span-2">
               <Badge variant="secondary">Default: expense</Badge>
               <Badge variant="secondary">Default: online</Badge>
               <Badge variant="secondary">Default: 1</Badge>
             </div>
-            <div className="md:col-span-2">
+            <div className="sm:col-span-2">
               <ActionError message={activeError} />
-              <div className="flex flex-wrap gap-2">
-                <Button type="submit" disabled={activePending}>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="submit" disabled={activePending} className="w-full sm:w-auto">
                   {activePending ? (isEditing ? "Saving..." : "Adding...") : isEditing ? "Save expense" : "Add expense"}
                 </Button>
                 {isEditing ? (
-                  <Button type="button" variant="outline" onClick={onCancelEdit}>
+                  <Button type="button" variant="outline" onClick={onCancelEdit} className="w-full sm:w-auto">
                     <X className="mr-2 size-4" />
                     Cancel
                   </Button>
@@ -531,7 +531,7 @@ function ExpenseTable({
 
   return (
     <Card className="py-2">
-      <CardHeader className="px-8 pt-8">
+      <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle className="text-2xl tracking-tight">Expenses</CardTitle>
@@ -542,9 +542,9 @@ function ExpenseTable({
           <Badge variant="secondary">{filteredExpenses.length} records</Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4 px-8 pb-8">
-        <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 lg:grid-cols-4">
-          <div className="space-y-2 lg:col-span-2">
+      <CardContent className="space-y-4 px-4 pb-6 sm:px-8 sm:pb-8">
+        <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="expense-search">Search</Label>
             <Input
               id="expense-search"
@@ -616,7 +616,7 @@ function ExpenseTable({
               onChange={(event) => setMonthFilter(event.target.value || "all")}
             />
           </div>
-          <div className="lg:col-span-4 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-4">
             <Button type="button" variant="outline" size="sm" onClick={() => setQuery("")}>
               Clear search
             </Button>
@@ -640,8 +640,8 @@ function ExpenseTable({
           </div>
         </div>
 
-        <div className="rounded-lg border">
-          <Table>
+        <div className="overflow-x-auto rounded-lg border">
+          <Table className="min-w-[1100px]">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
@@ -695,7 +695,7 @@ export function ExpenseManagement({
   return (
     <section className="space-y-6">
       <Card className="py-2">
-        <CardHeader className="px-8 pt-8">
+        <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
           <CardTitle className="text-3xl tracking-tight">Expenses</CardTitle>
           <p className="max-w-3xl text-sm text-muted-foreground">
             Add an expense quickly, then use filters and sorting to review your org’s spending.
