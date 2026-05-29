@@ -376,10 +376,11 @@ function SummaryCard({ summary }: { summary: BudgetAllocationSummaryDto }) {
 
 export function BudgetManagement({
   data,
+  showFamilyBudgetSection = true,
 }: {
   data: OrganizationFinanceDataDto;
+  showFamilyBudgetSection?: boolean;
 }) {
-  const isAdmin = data.currentUser.role === "ADMIN";
   const personalBudgets = data.budgets.filter((budget) => budget.scope === "personal");
   const familyBudgets = data.budgets.filter((budget) => budget.scope === "family");
 
@@ -389,8 +390,9 @@ export function BudgetManagement({
         <CardHeader className="px-8 pt-8">
           <CardTitle className="text-3xl tracking-tight">Budgets & allocation</CardTitle>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Manage personal and family budgets here. Family budgets are soft constraints, so we
-            always allow saving even when personal goals total more than the family target.
+            {showFamilyBudgetSection
+              ? "Manage personal and family budgets here. Family budgets are soft constraints, so we always allow saving even when personal goals total more than the family target."
+              : "Manage your personal budgets here and keep an eye on shared allocation summaries."}
           </p>
         </CardHeader>
         <CardContent className="px-8 pb-8">
@@ -410,7 +412,9 @@ export function BudgetManagement({
 
       <PersonalBudgetSection categories={data.categories} budgets={personalBudgets} />
 
-      {isAdmin ? <FamilyBudgetSection categories={data.categories} budgets={familyBudgets} /> : null}
+      {showFamilyBudgetSection ? (
+        <FamilyBudgetSection categories={data.categories} budgets={familyBudgets} />
+      ) : null}
 
       {!data.categories.length ? (
         <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">

@@ -155,7 +155,7 @@ export async function createExpenseAction(
     occurredAt: parseExpenseDate(parsed.data.occurredAt),
   });
 
-  redirect(ROUTES.DASHBOARD_EXPENSES);
+  redirect(ROUTES.EXPENSES);
 }
 
 export async function updateExpenseAction(
@@ -209,7 +209,7 @@ export async function updateExpenseAction(
     updatedAt: new Date(),
   });
 
-  redirect(ROUTES.DASHBOARD_EXPENSES);
+  redirect(ROUTES.EXPENSES);
 }
 
 export async function deleteExpenseAction(
@@ -231,5 +231,5 @@ export async function deleteExpenseAction(
   }
 
   await deleteExpenseRecord(expense.id);
-  redirect(ROUTES.DASHBOARD_EXPENSES);
+  redirect(ROUTES.EXPENSES);
 }

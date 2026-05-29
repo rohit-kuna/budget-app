@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { CopyInviteLinkButton } from "@/components/features/admin/copy-invite-link-button";
 import { createOrganizationAction, regenerateOrganizationInviteAction } from "@/app/actions/auth-roles/admin.actions";
 import type { AdminDashboardData } from "@/app/lib/admin-dashboard.types";
+import { ROUTES } from "@/app/lib/constants";
 
 type OrganizationSettingsProps = {
   data: AdminDashboardData;
@@ -80,7 +81,7 @@ export function OrganizationSettings({ data }: OrganizationSettingsProps) {
             </div>
           )}
           <Button asChild variant="ghost" className="px-0">
-            <Link href="/sign-in">Review auth flow</Link>
+            <Link href={ROUTES.SIGN_IN}>Review auth flow</Link>
           </Button>
         </CardContent>
       </Card>

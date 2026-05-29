@@ -1,8 +1,5 @@
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ROUTES } from "@/app/lib/constants";
 import { ROLES } from "@/app/lib/roles";
 import type { AdminDashboardData } from "@/app/lib/admin-dashboard.types";
 
@@ -15,11 +12,11 @@ export function OrganizationOverview({ data }: OrganizationOverviewProps) {
   const adminCount = data.members.filter((member) => member.role === ROLES.ADMIN).length;
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+    <section className="grid gap-6">
       <Card className="py-2">
         <CardHeader className="space-y-3 px-8 pt-8">
           <Badge variant="secondary" className="w-fit">
-            Admin dashboard
+            Organization
           </Badge>
           <CardTitle className="text-3xl tracking-tight">
             Manage your organization
@@ -55,24 +52,6 @@ export function OrganizationOverview({ data }: OrganizationOverviewProps) {
               </p>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      <Card className="py-2">
-        <CardHeader className="px-8 pt-8">
-          <CardTitle className="text-xl tracking-tight">Quick navigation</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 px-8 pb-8">
-          <Button asChild variant="outline" className="justify-start">
-            <Link href={ROUTES.ADMIN_USERS}>Manage members</Link>
-          </Button>
-          <Button asChild variant="outline" className="justify-start">
-            <Link href={ROUTES.ADMIN_SETTINGS}>Organization settings</Link>
-          </Button>
-          <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-            Google OAuth is handled by Clerk. Enable the Google provider in Clerk so invited
-            users can sign in with Google or email, then return here through the invite link.
-          </div>
         </CardContent>
       </Card>
     </section>

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentDbUser } from "@/app/lib/auth";
 import { ROUTES } from "@/app/lib/constants";
-import { ROLES } from "@/app/lib/roles";
 import { AppLogo } from "@/app/components/app-logo";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ui/mode-toggle";
@@ -19,7 +18,7 @@ export default async function HomePage() {
   const user = await getCurrentDbUser();
 
   if (user) {
-    redirect(user.role === ROLES.ADMIN ? ROUTES.ADMIN : ROUTES.DASHBOARD);
+    redirect(ROUTES.DASHBOARD);
   }
 
   return (

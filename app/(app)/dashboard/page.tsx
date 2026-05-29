@@ -8,6 +8,63 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { OnboardingDashboard } from "@/components/features/onboarding/onboarding-dashboard";
 
+type DashboardMenuItem = {
+  label: string;
+  href: string;
+  description: string;
+};
+
+const adminMenuItems: DashboardMenuItem[] = [
+  {
+    label: "Organization",
+    href: ROUTES.ORGANIZATION,
+    description: "Manage organization details and invite access.",
+  },
+  {
+    label: "Activity",
+    href: ROUTES.ACTIVITY,
+    description: "Review charts for income, expenses, and budget health.",
+  },
+  {
+    label: "Users",
+    href: ROUTES.USERS,
+    description: "Review members and adjust roles.",
+  },
+  {
+    label: "Categories",
+    href: ROUTES.CATEGORIES,
+    description: "Create and maintain budget categories.",
+  },
+  {
+    label: "Budgets",
+    href: ROUTES.BUDGETS,
+    description: "Monitor allocation and manage personal or family budgets.",
+  },
+  {
+    label: "Expenses",
+    href: ROUTES.EXPENSES,
+    description: "Track and manage organization expenses.",
+  },
+];
+
+const userMenuItems: DashboardMenuItem[] = [
+  {
+    label: "Activity",
+    href: ROUTES.ACTIVITY,
+    description: "Review your organization’s spending and budget trends.",
+  },
+  {
+    label: "Budgets",
+    href: ROUTES.BUDGETS,
+    description: "Manage personal budgets and view allocation summaries.",
+  },
+  {
+    label: "Expenses",
+    href: ROUTES.EXPENSES,
+    description: "Track and manage your expenses.",
+  },
+];
+
 export default async function DashboardPage() {
   const user = await getCurrentDbUser();
 
@@ -36,7 +93,7 @@ export default async function DashboardPage() {
   }
 
   const organization = await getOrganizationById(user.orgId);
-  const isAdmin = user.role === ROLES.ADMIN;
+  const menuItems = user.role === ROLES.ADMIN ? adminMenuItems : userMenuItems;
 
   return (
     <main className="mx-auto w-full max-w-7xl p-6">
@@ -47,8 +104,7 @@ export default async function DashboardPage() {
               Welcome back{organization ? `, ${organization.name}` : ""}
             </CardTitle>
             <CardDescription>
-              Your organization workspace is ready. Use the navigation to review activity and
-              billing.
+              Your workspace is ready. Use the dashboard menu to jump into the right area.
             </CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8">
@@ -75,23 +131,19 @@ export default async function DashboardPage() {
 
         <Card className="py-2">
           <CardHeader className="px-8 pt-8">
-            <CardTitle className="text-xl tracking-tight">Quick actions</CardTitle>
+            <CardTitle className="text-xl tracking-tight">Dashboard menu</CardTitle>
+            <CardDescription>Pick the section you want to manage next.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 px-8 pb-8">
-            {isAdmin ? (
-              <Button asChild className="w-full justify-start">
-                <Link href={ROUTES.ADMIN}>Open admin dashboard</Link>
-              </Button>
-            ) : null}
-            <Button asChild variant="outline" className="w-full justify-start">
-              <Link href={ROUTES.DASHBOARD_ACTIVITY}>View activity</Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full justify-start">
-              <Link href={ROUTES.DASHBOARD_EXPENSES}>Manage expenses</Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full justify-start">
-              <Link href={ROUTES.DASHBOARD_BUDGETS}>Manage budgets</Link>
-            </Button>
+          <CardContent className="grid gap-3 px-8 pb-8">
+            {menuItems.map((item) => (
+              <div key={item.label} className="rounded-lg border bg-muted/20 p-4">
+                <p className="font-semibold">{item.label}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+                <Button asChild variant="outline" className="mt-4 w-full justify-start">
+                  <Link href={item.href}>Open {item.label.toLowerCase()}</Link>
+                </Button>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </section>

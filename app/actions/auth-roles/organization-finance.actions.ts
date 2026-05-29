@@ -153,7 +153,7 @@ export async function createCategoryAction(
     createdBy: currentUser.id,
   });
 
-  redirect(ROUTES.ADMIN_SETTINGS);
+  redirect(ROUTES.CATEGORIES);
 }
 
 export async function updateCategoryAction(
@@ -186,7 +186,7 @@ export async function updateCategoryAction(
     updatedAt: new Date(),
   });
 
-  redirect(ROUTES.ADMIN_SETTINGS);
+  redirect(ROUTES.CATEGORIES);
 }
 
 export async function deleteCategoryAction(
@@ -215,7 +215,7 @@ export async function deleteCategoryAction(
   }
 
   await deleteCategoryRecord(category.id);
-  redirect(ROUTES.ADMIN_SETTINGS);
+  redirect(ROUTES.CATEGORIES);
 }
 
 async function ensurePersonalBudgetOwnership(budgetId: number, currentUserId: string) {
@@ -267,7 +267,7 @@ export async function createPersonalBudgetAction(
     createdBy: currentUser.id,
   });
 
-  redirect(ROUTES.DASHBOARD_BUDGETS);
+  redirect(ROUTES.BUDGETS);
 }
 
 export async function createFamilyBudgetAction(
@@ -299,7 +299,7 @@ export async function createFamilyBudgetAction(
     createdBy: currentUser.id,
   });
 
-  redirect(ROUTES.DASHBOARD_BUDGETS);
+  redirect(ROUTES.BUDGETS);
 }
 
 export async function updatePersonalBudgetAction(
@@ -339,7 +339,7 @@ export async function updatePersonalBudgetAction(
     updatedAt: new Date(),
   });
 
-  redirect(ROUTES.DASHBOARD_BUDGETS);
+  redirect(ROUTES.BUDGETS);
 }
 
 export async function updateFamilyBudgetAction(
@@ -380,7 +380,7 @@ export async function updateFamilyBudgetAction(
     updatedAt: new Date(),
   });
 
-  redirect(ROUTES.DASHBOARD_BUDGETS);
+  redirect(ROUTES.BUDGETS);
 }
 
 export async function deletePersonalBudgetAction(
@@ -402,7 +402,7 @@ export async function deletePersonalBudgetAction(
   }
 
   await deleteBudgetRecord(budget.id);
-  redirect(ROUTES.DASHBOARD_BUDGETS);
+  redirect(ROUTES.BUDGETS);
 }
 
 export async function deleteFamilyBudgetAction(
@@ -425,5 +425,5 @@ export async function deleteFamilyBudgetAction(
   }
 
   await deleteBudgetRecord(budget.id);
-  redirect(ROUTES.DASHBOARD_BUDGETS);
+  redirect(ROUTES.BUDGETS);
 }

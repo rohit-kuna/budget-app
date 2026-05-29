@@ -38,18 +38,28 @@ type HeaderNavItem = {
   match?: "exact" | "prefix";
 };
 
-const dashboardNavItems: HeaderNavItem[] = [
-  { label: "Dashboard", href: ROUTES.DASHBOARD, match: "exact" },
-];
-
 const adminNavItems: HeaderNavItem[] = [
   { label: "Dashboard", href: ROUTES.DASHBOARD, match: "exact" },
+  { label: "Activity", href: ROUTES.ACTIVITY, match: "prefix" },
   { label: "Organization", href: ROUTES.ORGANIZATION, match: "prefix" },
   { label: "Users", href: ROUTES.USERS, match: "prefix" },
   { label: "Categories", href: ROUTES.CATEGORIES, match: "prefix" },
   { label: "Budgets", href: ROUTES.BUDGETS, match: "prefix" },
   { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
 ];
+
+const userNavItems: HeaderNavItem[] = [
+  { label: "Dashboard", href: ROUTES.DASHBOARD, match: "exact" },
+  { label: "Activity", href: ROUTES.ACTIVITY, match: "prefix" },
+  { label: "Budgets", href: ROUTES.BUDGETS, match: "prefix" },
+  { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
+];
+
+const dashboardNavItem: HeaderNavItem = {
+  label: "Dashboard",
+  href: ROUTES.DASHBOARD,
+  match: "exact",
+};
 
 export function AuthHeader({ role, hasOrganization }: AuthHeaderProps) {
   const { openUserProfile } = useClerk();
@@ -60,14 +70,10 @@ export function AuthHeader({ role, hasOrganization }: AuthHeaderProps) {
     role === ROLES.ADMIN
       ? hasOrganization
         ? adminNavItems
-        : dashboardNavItems
+        : [dashboardNavItem]
       : hasOrganization
-        ? [
-            { label: "Dashboard", href: ROUTES.DASHBOARD, match: "exact" },
-            { label: "Budgets", href: ROUTES.BUDGETS, match: "prefix" },
-            { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
-          ]
-        : dashboardNavItems;
+        ? userNavItems
+        : [dashboardNavItem];
 
   const logoHref = ROUTES.DASHBOARD;
 
@@ -149,16 +155,29 @@ export function AuthHeader({ role, hasOrganization }: AuthHeaderProps) {
               <DropdownMenuItem asChild>
                 <Link href={ROUTES.DASHBOARD}>Dashboard</Link>
               </DropdownMenuItem>
-              {role === ROLES.ADMIN ? (
+              {hasOrganization ? (
                 <>
                   <DropdownMenuItem asChild>
-                    <Link href={ROUTES.ORGANIZATION}>Organization</Link>
+                    <Link href={ROUTES.ACTIVITY}>Activity</Link>
+                  </DropdownMenuItem>
+                  {role === ROLES.ADMIN ? (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href={ROUTES.ORGANIZATION}>Organization</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={ROUTES.USERS}>Users</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={ROUTES.CATEGORIES}>Categories</Link>
+                      </DropdownMenuItem>
+                    </>
+                  ) : null}
+                  <DropdownMenuItem asChild>
+                    <Link href={ROUTES.BUDGETS}>Budgets</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href={ROUTES.USERS}>Users</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href={ROUTES.CATEGORIES}>Categories</Link>
+                    <Link href={ROUTES.EXPENSES}>Expenses</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>

@@ -4,7 +4,6 @@ import { acceptOrganizationInvite } from "@/app/actions/auth-roles/admin.actions
 import { getCurrentDbUser } from "@/app/lib/auth";
 import { getOrganizationByInviteCode } from "@/app/actions/tables/organizations.table.actions";
 import { ROUTES } from "@/app/lib/constants";
-import { ROLES } from "@/app/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -26,7 +25,7 @@ export default async function JoinPage({ params }: JoinPageProps) {
 
   if (currentUser) {
     await acceptOrganizationInvite(inviteCode);
-    redirect(currentUser.role === ROLES.ADMIN ? ROUTES.ADMIN : ROUTES.DASHBOARD);
+    redirect(ROUTES.DASHBOARD);
   }
 
   const redirectUrl = `${ROUTES.JOIN}/${inviteCode}`;

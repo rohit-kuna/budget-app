@@ -44,6 +44,6 @@ export async function requireUser() {
  */
 export async function requireAdmin() {
   const user = await requireUser();
-  if (user.role !== ROLES.ADMIN) redirect(ROUTES.HOME);
+  if (user.role !== ROLES.ADMIN) redirect(ROUTES.DASHBOARD);
   return user;
 }

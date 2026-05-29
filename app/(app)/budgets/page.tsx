@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getOrganizationFinanceData } from "@/app/actions/auth-roles/organization-finance.actions";
 import { ROUTES } from "@/app/lib/constants";
+import { ROLES } from "@/app/lib/roles";
 import { BudgetManagement } from "@/components/features/budgets/budget-management";
 
 export default async function BudgetsPage() {
@@ -12,7 +13,10 @@ export default async function BudgetsPage() {
 
   return (
     <main className="mx-auto w-full max-w-7xl p-6">
-      <BudgetManagement data={data} />
+      <BudgetManagement
+        data={data}
+        showFamilyBudgetSection={data.currentUser.role === ROLES.ADMIN}
+      />
     </main>
   );
 }

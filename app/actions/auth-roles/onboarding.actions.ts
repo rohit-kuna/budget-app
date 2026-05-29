@@ -55,7 +55,7 @@ export async function joinOrganizationByInviteCodeAction(
     await updateUserById(currentUser.id, { orgId: organization.id });
   }
 
-  redirect(currentUser.role === ROLES.ADMIN ? ROUTES.ADMIN : ROUTES.DASHBOARD);
+  redirect(ROUTES.DASHBOARD);
 }
 
 export async function createOrganizationFromOnboardingAction(
@@ -96,5 +96,5 @@ export async function createOrganizationFromOnboardingAction(
     role: ROLES.ADMIN,
   });
 
-  redirect(ROUTES.ADMIN);
+  redirect(ROUTES.DASHBOARD);
 }

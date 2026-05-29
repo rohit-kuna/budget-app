@@ -278,16 +278,18 @@ function ExpenseFormCard({
                 options={expenseModes}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Scope</Label>
-              <FormSelect
-                name="scope"
-                defaultValue={editingExpense?.scope ?? "personal"}
-                options={expenseScopes}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <NecessityScoreSlider defaultValue={editingExpense?.necessityScore ?? 1} />
+            <div className="grid gap-4 md:col-span-2 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Scope</Label>
+                <FormSelect
+                  name="scope"
+                  defaultValue={editingExpense?.scope ?? "personal"}
+                  options={expenseScopes}
+                />
+              </div>
+              <div className="space-y-2">
+                <NecessityScoreSlider defaultValue={editingExpense?.necessityScore ?? 1} />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="expense-date">Date</Label>
@@ -354,8 +356,8 @@ function ExpenseRowActions({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col items-start gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button type="button" variant="outline" size="sm" onClick={() => onEdit(expense)}>
           <PencilLine className="mr-2 size-4" />
           Edit
@@ -605,10 +607,6 @@ function ExpenseTable({
                 })),
               ]}
             />
-            <div className="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-xs text-muted-foreground">
-              <span>1 = Low</span>
-              <span>5 = High</span>
-            </div>
           </div>
           <div className="space-y-2">
             <Label>Month</Label>
@@ -648,7 +646,7 @@ function ExpenseTable({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className={cn(header.column.id === "actions" && "text-right")}> 
+                    <TableHead key={header.id} className={cn(header.column.id === "actions" && "text-left")}>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   ))}
@@ -660,7 +658,12 @@ function ExpenseTable({
                 table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className={cn(cell.column.id === "actions" && "align-top")}>
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          cell.column.id === "actions" && "align-top whitespace-nowrap text-left"
+                        )}
+                      >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}

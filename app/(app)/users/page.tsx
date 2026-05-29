@@ -1,7 +1,7 @@
 import { getAdminDashboardData } from "@/app/actions/auth-roles/admin.actions";
 import { MemberManagement } from "@/components/features/admin/member-management";
 
-export default async function AdminUsersPage() {
+export default async function UsersPage() {
   const data = await getAdminDashboardData();
 
   return (
