@@ -29,6 +29,7 @@ import {
 
 type AuthHeaderProps = {
   role: AppRole;
+  hasOrganization: boolean;
 };
 
 type HeaderNavItem = {
@@ -38,31 +39,37 @@ type HeaderNavItem = {
 };
 
 const dashboardNavItems: HeaderNavItem[] = [
-  { label: "Activity", href: ROUTES.DASHBOARD_ACTIVITY, match: "prefix" },
-  { label: "Billing", href: ROUTES.DASHBOARD_BILLING, match: "prefix" },
+  { label: "Dashboard", href: ROUTES.DASHBOARD, match: "exact" },
 ];
 
-const adminSectionNavItems: HeaderNavItem[] = [
-  { label: "Users", href: ROUTES.ADMIN_USERS, match: "prefix" },
-  { label: "Settings", href: ROUTES.ADMIN_SETTINGS, match: "prefix" },
+const adminNavItems: HeaderNavItem[] = [
+  { label: "Dashboard", href: ROUTES.DASHBOARD, match: "exact" },
+  { label: "Organization", href: ROUTES.ORGANIZATION, match: "prefix" },
+  { label: "Users", href: ROUTES.USERS, match: "prefix" },
+  { label: "Categories", href: ROUTES.CATEGORIES, match: "prefix" },
+  { label: "Budgets", href: ROUTES.BUDGETS, match: "prefix" },
+  { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
 ];
 
-export function AuthHeader({ role }: AuthHeaderProps) {
+export function AuthHeader({ role, hasOrganization }: AuthHeaderProps) {
   const { openUserProfile } = useClerk();
   const { user, isLoaded } = useUser();
   const pathname = usePathname();
 
-  const isInAdminSection =
-    pathname === ROUTES.ADMIN || pathname.startsWith(`${ROUTES.ADMIN}/`);
-
   const navItems =
     role === ROLES.ADMIN
-      ? isInAdminSection
-        ? adminSectionNavItems
+      ? hasOrganization
+        ? adminNavItems
         : dashboardNavItems
-      : dashboardNavItems;
+      : hasOrganization
+        ? [
+            { label: "Dashboard", href: ROUTES.DASHBOARD, match: "exact" },
+            { label: "Budgets", href: ROUTES.BUDGETS, match: "prefix" },
+            { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
+          ]
+        : dashboardNavItems;
 
-  const logoHref = isInAdminSection ? ROUTES.ADMIN : ROUTES.DASHBOARD;
+  const logoHref = ROUTES.DASHBOARD;
 
   const displayName = useMemo(() => {
     if (!isLoaded) return "Loading";
@@ -102,23 +109,25 @@ export function AuthHeader({ role }: AuthHeaderProps) {
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-6 py-4 lg:max-w-none lg:px-10 xl:px-14 2xl:px-20">
         <div className="flex items-center gap-8">
           <AppLogo href={logoHref} />
-          <NavigationMenu viewport={false}>
-            <NavigationMenuList className="justify-start">
-              {navItems.map((item) => (
-                <NavigationMenuItem key={item.label}>
-                  <NavigationMenuLink
-                    asChild
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isNavItemActive(item) && "bg-accent/50 text-accent-foreground"
-                    )}
-                  >
-                    <Link href={item.href}>{item.label}</Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              ))}
-            </NavigationMenuList>
-          </NavigationMenu>
+          {navItems.length ? (
+            <NavigationMenu viewport={false}>
+              <NavigationMenuList className="justify-start">
+                {navItems.map((item) => (
+                  <NavigationMenuItem key={item.label}>
+                    <NavigationMenuLink
+                      asChild
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        isNavItemActive(item) && "bg-accent/50 text-accent-foreground"
+                      )}
+                    >
+                      <Link href={item.href}>{item.label}</Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                ))}
+              </NavigationMenuList>
+            </NavigationMenu>
+          ) : null}
         </div>
 
         <div className="flex items-center gap-2">
@@ -137,20 +146,25 @@ export function AuthHeader({ role }: AuthHeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={ROUTES.DASHBOARD}>Dashboard</Link>
+              </DropdownMenuItem>
               {role === ROLES.ADMIN ? (
                 <>
-                  {isInAdminSection ? (
-                    <DropdownMenuItem asChild>
-                      <Link href={ROUTES.DASHBOARD}>Dashboard</Link>
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem asChild>
-                      <Link href={ROUTES.ADMIN}>Admin Home</Link>
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuItem asChild>
+                    <Link href={ROUTES.ORGANIZATION}>Organization</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={ROUTES.USERS}>Users</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={ROUTES.CATEGORIES}>Categories</Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
-              ) : null}
+              ) : (
+                <DropdownMenuSeparator />
+              )}
               <DropdownMenuItem onSelect={() => openUserProfile()}>
                 Profile settings
               </DropdownMenuItem>

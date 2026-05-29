@@ -14,7 +14,7 @@ export default async function ApplicationLayout({
 
   return (
     <>
-      <AuthHeader role={user.role ?? ROLES.USER} />
+      <AuthHeader role={user.role ?? ROLES.USER} hasOrganization={Boolean(user.orgId)} />
       {children}
     </>
   );

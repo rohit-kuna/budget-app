@@ -16,7 +16,7 @@ export default async function AdminLayout({
 
   return (
     <>
-      <AuthHeader role={ROLES.ADMIN} />
+      <AuthHeader role={ROLES.ADMIN} hasOrganization={Boolean(user.orgId)} />
       {children}
     </>
   );

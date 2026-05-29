@@ -1,0 +1,422 @@
+"use client";
+
+import { useActionState } from "react";
+import { AlertCircle, TriangleAlert, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import type {
+  BudgetAllocationSummaryDto,
+  BudgetRecordDto,
+  CategoryRecordDto,
+  OrganizationFinanceDataDto,
+} from "@/app/lib/finance.types";
+import { financeInitialState } from "@/app/actions/auth-roles/finance.types";
+import {
+  createFamilyBudgetAction,
+  createPersonalBudgetAction,
+  deleteFamilyBudgetAction,
+  deletePersonalBudgetAction,
+  updateFamilyBudgetAction,
+  updatePersonalBudgetAction,
+} from "@/app/actions/auth-roles/organization-finance.actions";
+
+function ActionError({ message }: { message: string | null }) {
+  if (!message) return null;
+
+  return (
+    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+      <AlertCircle className="mt-0.5 size-4 shrink-0" />
+      <span>{message}</span>
+    </div>
+  );
+}
+
+const moneyFormatter = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+function formatMoney(amount: string) {
+  return moneyFormatter.format(Number(amount));
+}
+
+function CategorySelect({
+  categories,
+  name,
+  defaultValue,
+}: {
+  categories: CategoryRecordDto[];
+  name: string;
+  defaultValue?: number;
+}) {
+  return (
+    <select
+      name={name}
+      defaultValue={defaultValue ?? categories[0]?.id}
+      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+      required
+    >
+      {categories.map((category) => (
+        <option key={category.id} value={category.id}>
+          {category.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function BudgetEditor({
+  budget,
+  categories,
+  updateAction,
+  deleteAction,
+  updatePending,
+  deletePending,
+  updateError,
+  deleteError,
+}: {
+  budget: BudgetRecordDto;
+  categories: CategoryRecordDto[];
+  updateAction: (formData: FormData) => void;
+  deleteAction: (formData: FormData) => void;
+  updatePending: boolean;
+  deletePending: boolean;
+  updateError: string | null;
+  deleteError: string | null;
+}) {
+  return (
+    <div className="rounded-lg border bg-muted/20 p-4">
+        <form action={updateAction} className="space-y-4">
+        <input type="hidden" name="budgetId" value={budget.id} />
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <CategorySelect categories={categories} name="categoryId" defaultValue={budget.categoryId} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`amount-${budget.id}`}>Amount</Label>
+            <Input id={`amount-${budget.id}`} name="amount" type="number" min="1" step="0.01" defaultValue={budget.amount} required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`month-${budget.id}`}>Budget month</Label>
+            <Input id={`month-${budget.id}`} name="month" type="month" defaultValue={budget.month} required />
+          </div>
+        </div>
+        <p className="text-sm text-muted-foreground">{budget.monthLabel}</p>
+        <ActionError message={updateError} />
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" disabled={updatePending}>
+            {updatePending ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </form>
+      <form action={deleteAction} className="mt-3">
+        <input type="hidden" name="budgetId" value={budget.id} />
+        <ActionError message={deleteError} />
+        <Button type="submit" variant="outline" className="mt-2" disabled={deletePending}>
+          <Trash2 className="mr-2 size-4" />
+          {deletePending ? "Deleting..." : "Delete"}
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+function PersonalBudgetRow({
+  budget,
+  categories,
+}: {
+  budget: BudgetRecordDto;
+  categories: CategoryRecordDto[];
+}) {
+  const [updateState, updateAction, updatePending] = useActionState(
+    updatePersonalBudgetAction,
+    financeInitialState
+  );
+  const [deleteState, deleteAction, deletePending] = useActionState(
+    deletePersonalBudgetAction,
+    financeInitialState
+  );
+
+  return (
+    <BudgetEditor
+      budget={budget}
+      categories={categories}
+      updateAction={updateAction}
+      deleteAction={deleteAction}
+      updatePending={updatePending}
+      deletePending={deletePending}
+      updateError={updateState.error}
+      deleteError={deleteState.error}
+    />
+  );
+}
+
+function FamilyBudgetRow({
+  budget,
+  categories,
+}: {
+  budget: BudgetRecordDto;
+  categories: CategoryRecordDto[];
+}) {
+  const [updateState, updateAction, updatePending] = useActionState(
+    updateFamilyBudgetAction,
+    financeInitialState
+  );
+  const [deleteState, deleteAction, deletePending] = useActionState(
+    deleteFamilyBudgetAction,
+    financeInitialState
+  );
+
+  return (
+    <BudgetEditor
+      budget={budget}
+      categories={categories}
+      updateAction={updateAction}
+      deleteAction={deleteAction}
+      updatePending={updatePending}
+      deletePending={deletePending}
+      updateError={updateState.error}
+      deleteError={deleteState.error}
+    />
+  );
+}
+
+function PersonalBudgetSection({
+  categories,
+  budgets,
+}: {
+  categories: CategoryRecordDto[];
+  budgets: BudgetRecordDto[];
+}) {
+  const [createState, createAction, createPending] = useActionState(
+    createPersonalBudgetAction,
+    financeInitialState
+  );
+
+  if (!categories.length) {
+    return (
+      <Card className="py-2">
+        <CardHeader className="px-8 pt-8">
+          <CardTitle className="text-2xl tracking-tight">Personal budgets</CardTitle>
+        </CardHeader>
+        <CardContent className="px-8 pb-8">
+          <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+            Ask an admin to create categories before adding budgets.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="py-2">
+      <CardHeader className="px-8 pt-8">
+        <CardTitle className="text-2xl tracking-tight">Personal budgets</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 px-8 pb-8">
+        <form action={createAction} className="grid gap-4 rounded-lg border border-primary/20 bg-primary/5 p-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <CategorySelect categories={categories} name="categoryId" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="personal-amount">Amount</Label>
+            <Input id="personal-amount" name="amount" type="number" min="1" step="0.01" placeholder="5000" required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="personal-month">Budget month</Label>
+            <Input id="personal-month" name="month" type="month" required />
+          </div>
+          <div className="md:col-span-2">
+            <ActionError message={createState.error} />
+            <Button type="submit" disabled={createPending}>
+              {createPending ? "Creating..." : "Create personal budget"}
+            </Button>
+          </div>
+        </form>
+
+        <div className="grid gap-3">
+          {budgets.length ? (
+            budgets.map((budget) => (
+              <PersonalBudgetRow key={budget.id} budget={budget} categories={categories} />
+            ))
+          ) : (
+            <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+              No personal budgets yet. Add one to get started.
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function FamilyBudgetSection({
+  categories,
+  budgets,
+}: {
+  categories: CategoryRecordDto[];
+  budgets: BudgetRecordDto[];
+}) {
+  const [createState, createAction, createPending] = useActionState(
+    createFamilyBudgetAction,
+    financeInitialState
+  );
+
+  if (!categories.length) {
+    return (
+      <Card className="py-2">
+        <CardHeader className="px-8 pt-8">
+          <CardTitle className="text-2xl tracking-tight">Family budgets</CardTitle>
+        </CardHeader>
+        <CardContent className="px-8 pb-8">
+          <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+            Create categories before adding family budgets.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="py-2">
+      <CardHeader className="px-8 pt-8">
+        <CardTitle className="text-2xl tracking-tight">Family budgets</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 px-8 pb-8">
+        <form action={createAction} className="grid gap-4 rounded-lg border border-primary/20 bg-primary/5 p-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <CategorySelect categories={categories} name="categoryId" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="family-amount">Amount</Label>
+            <Input id="family-amount" name="amount" type="number" min="1" step="0.01" placeholder="15000" required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="family-month">Budget month</Label>
+            <Input id="family-month" name="month" type="month" required />
+          </div>
+          <div className="md:col-span-2">
+            <ActionError message={createState.error} />
+            <Button type="submit" disabled={createPending}>
+              {createPending ? "Creating..." : "Create family budget"}
+            </Button>
+          </div>
+        </form>
+
+        <div className="grid gap-3">
+          {budgets.length ? (
+            budgets.map((budget) => (
+              <FamilyBudgetRow key={budget.id} budget={budget} categories={categories} />
+            ))
+          ) : (
+            <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+              No family budgets yet. Admins can add one for the organization.
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SummaryCard({ summary }: { summary: BudgetAllocationSummaryDto }) {
+  const isOverBudget = Boolean(summary.overageAmount);
+
+  return (
+    <Card className="py-2">
+      <CardHeader className="px-8 pt-8">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-xl tracking-tight">{summary.categoryName}</CardTitle>
+          {isOverBudget ? (
+            <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-700 dark:text-amber-400">
+              <TriangleAlert className="size-3.5" />
+              Over budget
+            </Badge>
+          ) : (
+            <Badge variant="secondary">Within budget</Badge>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">{summary.monthLabel}</p>
+      </CardHeader>
+      <CardContent className="space-y-3 px-8 pb-8">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Family Budget</p>
+            <p className="mt-2 text-lg font-semibold">
+              {summary.familyBudget ? formatMoney(summary.familyBudget.amount) : "—"}
+            </p>
+          </div>
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Personal Goals</p>
+            <p className="mt-2 text-lg font-semibold">{formatMoney(summary.personalTotal)}</p>
+          </div>
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Allocated</p>
+            <p className="mt-2 text-lg font-semibold">
+              {summary.allocatedPercent !== null ? `${summary.allocatedPercent}%` : "—"}
+            </p>
+          </div>
+        </div>
+        {isOverBudget ? (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-amber-700 dark:text-amber-400">
+            ⚠ Family {summary.categoryName} budget exceeded by {formatMoney(summary.overageAmount ?? "0")}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function BudgetManagement({
+  data,
+}: {
+  data: OrganizationFinanceDataDto;
+}) {
+  const isAdmin = data.currentUser.role === "ADMIN";
+  const personalBudgets = data.budgets.filter((budget) => budget.scope === "personal");
+  const familyBudgets = data.budgets.filter((budget) => budget.scope === "family");
+
+  return (
+    <section className="space-y-6">
+      <Card className="py-2">
+        <CardHeader className="px-8 pt-8">
+          <CardTitle className="text-3xl tracking-tight">Budgets & allocation</CardTitle>
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            Manage personal and family budgets here. Family budgets are soft constraints, so we
+            always allow saving even when personal goals total more than the family target.
+          </p>
+        </CardHeader>
+        <CardContent className="px-8 pb-8">
+          {data.allocationSummaries.length ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {data.allocationSummaries.map((summary) => (
+                <SummaryCard key={`${summary.categoryId}-${summary.month}`} summary={summary} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+              Add a family budget to see allocation summaries and overage warnings.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <PersonalBudgetSection categories={data.categories} budgets={personalBudgets} />
+
+      {isAdmin ? <FamilyBudgetSection categories={data.categories} budgets={familyBudgets} /> : null}
+
+      {!data.categories.length ? (
+        <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+          You need categories before budgets can be created. Ask an admin to add them first.
+        </div>
+      ) : null}
+    </section>
+  );
+}

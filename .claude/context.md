@@ -11,6 +11,9 @@ Treat the codebase with Next.js 15 App Router conventions in mind, even though `
 
 ## Stack Rules
 
+### Agent Skills
+- Always refer to the agent skills folder for technical skills for each of the stack being used, follow best practices
+
 ### Frontend
 - Next.js App Router architecture
 - React 19
@@ -58,12 +61,14 @@ Treat the codebase with Next.js 15 App Router conventions in mind, even though `
 - `app/(auth)` holds Clerk sign-in and sign-up routes
 - `app/(application)` holds authenticated user-facing pages like dashboard views
 - `app/(admin)` holds admin-only pages and layout wrappers
+- `app/join/[inviteCode]` handles invite acceptance after sign-in
 - `app/service-unavailable` is the fallback route for backend or DB failures
 
 ### Application logic
 - `app/lib/auth.ts` centralizes auth checks and DB user loading
 - `app/lib/constants.ts` stores route constants and public route patterns
 - `app/lib/roles.ts` defines the app role model
+- `app/lib/urls.ts` builds shareable organization invite links
 - `app/lib/user-sync.ts` handles Clerk-to-DB user synchronization
 - `app/actions/` contains server actions grouped by domain
 
@@ -89,3 +94,9 @@ Treat the codebase with Next.js 15 App Router conventions in mind, even though `
 - Reuse existing shadcn primitives before creating new UI patterns
 - Keep DB names snake_case and TypeScript identifiers camelCase
 - Favor incremental, focused changes over broad refactors
+- Org admins create an organization from the admin dashboard, share a Clerk-backed invite link, and manage member roles inside the org scope
+- Google OAuth is configured in Clerk, so keep sign-in flows compatible with OAuth and email-based login
+
+## ShadCN
+- always refer to .agents/skills/shadcn
+- install new components if required from https://ui.shadcn.com/docs/components

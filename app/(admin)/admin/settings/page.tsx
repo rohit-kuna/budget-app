@@ -1,7 +1,18 @@
-export default function SettingsPage() {
+import { getAdminDashboardData } from "@/app/actions/auth-roles/admin.actions";
+import { CategoryManagement } from "@/components/features/admin/category-management";
+import { OrganizationSettings } from "@/components/features/admin/organization-settings";
+import { getOrganizationCategoriesForAdmin } from "@/app/actions/auth-roles/organization-finance.actions";
+
+export default async function SettingsPage() {
+  const [data, financeData] = await Promise.all([
+    getAdminDashboardData(),
+    getOrganizationCategoriesForAdmin(),
+  ]);
+
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-73px)] w-full max-w-2xl items-center justify-center p-6">
-      <h1 className="text-3xl font-semibold tracking-tight">Settings page</h1>
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-6">
+      <OrganizationSettings data={data} />
+      <CategoryManagement categories={financeData.categories} />
     </main>
   );
 }

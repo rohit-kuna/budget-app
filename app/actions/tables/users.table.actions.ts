@@ -58,7 +58,10 @@ export async function getAllUsers(): Promise<AdminUserTableRow[]> {
 export async function updateUserById(id: string, input: UpdateUserInput) {
   const [updatedUser] = await db
     .update(users)
-    .set(input)
+    .set({
+      ...input,
+      updatedAt: new Date(),
+    })
     .where(eq(users.id, id))
     .returning();
 

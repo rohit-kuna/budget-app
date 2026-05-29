@@ -5,6 +5,7 @@
   "scripts": {
     "dockerup": "docker compose -f docker/docker-compose.yaml up -d",
     "dockerdown": "docker compose -f docker/docker-compose.yaml down",
+    "dockerdownv": "docker compose -f docker/docker-compose.yaml down -v",
     "docker:dev": "npm run dockerup && wait-on tcp:localhost:5432 && next dev",
     "dev": "next dev",
     "build": "next build",
