@@ -124,6 +124,8 @@ export async function updateOrganizationMemberRoleAction(formData: FormData) {
   }
 
   await updateUserById(targetUser.id, { role: parsed.data.role });
+  revalidatePath(ROUTES.USERS, "page");
+  revalidatePath(ROUTES.ORGANIZATION, "page");
 }
 
 export async function promoteUserToAdmin(userId: string) {
