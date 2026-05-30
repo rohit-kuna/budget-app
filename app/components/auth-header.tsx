@@ -49,7 +49,7 @@ const adminNavItems: HeaderNavItem[] = [
   { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
   { label: "Transfers", href: ROUTES.TRANSFERS, match: "prefix" },
   { label: "Counterparties", href: ROUTES.COUNTERPARTIES, match: "prefix" },
-  { label: "Transaction modes", href: ROUTES.TRANSACTION_MODES, match: "prefix" },
+  { label: "Modes", href: ROUTES.TRANSACTION_MODES, match: "prefix" },
 ];
 
 const userNavItems: HeaderNavItem[] = [
@@ -59,7 +59,7 @@ const userNavItems: HeaderNavItem[] = [
   { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
   { label: "Transfers", href: ROUTES.TRANSFERS, match: "prefix" },
   { label: "Counterparties", href: ROUTES.COUNTERPARTIES, match: "prefix" },
-  { label: "Transaction modes", href: ROUTES.TRANSACTION_MODES, match: "prefix" },
+  { label: "Modes", href: ROUTES.TRANSACTION_MODES, match: "prefix" },
 ];
 
 const dashboardNavItem: HeaderNavItem = {
