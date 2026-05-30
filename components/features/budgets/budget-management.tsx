@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { AlertCircle, TriangleAlert, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import type {
   BudgetAllocationSummaryDto,
   BudgetRecordDto,
   CategoryRecordDto,
+  FinanceMemberDto,
   OrganizationFinanceDataDto,
 } from "@/app/lib/finance.types";
 import { financeInitialState } from "@/app/actions/auth-roles/finance.types";
@@ -42,6 +43,19 @@ const moneyFormatter = new Intl.NumberFormat("en-IN", {
 
 function formatMoney(amount: string) {
   return moneyFormatter.format(Number(amount));
+}
+
+function formatBudgetShare(amount: string, familyAmount: string) {
+  const familyValue = Number(familyAmount);
+  if (!familyValue) return "—";
+
+  const sharePercent = Number(((Number(amount) / familyValue) * 100).toFixed(0));
+  return `${sharePercent}% of family budget`;
+}
+
+function getMemberName(memberLookup: Map<string, string>, userId: string | null) {
+  if (!userId) return "Unknown user";
+  return memberLookup.get(userId) ?? `User ${userId.slice(0, 8)}`;
 }
 
 function CategorySelect({
@@ -186,6 +200,82 @@ function FamilyBudgetRow({
   );
 }
 
+function AllocationSummaryPanel({
+  summaries,
+  members,
+}: {
+  summaries: BudgetAllocationSummaryDto[];
+  members: FinanceMemberDto[];
+}) {
+  const latestSummariesByCategory = useMemo(() => {
+    const map = new Map<number, BudgetAllocationSummaryDto>();
+    for (const summary of summaries) {
+      map.set(summary.categoryId, summary);
+    }
+    return map;
+  }, [summaries]);
+
+  const categories = useMemo(
+    () =>
+      Array.from(latestSummariesByCategory.values()).map((summary) => ({
+        id: summary.categoryId,
+        name: summary.categoryName,
+      })),
+    [latestSummariesByCategory]
+  );
+
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
+    categories[0] ? String(categories[0].id) : ""
+  );
+  const resolvedSelectedCategoryId =
+    selectedCategoryId && categories.some((category) => String(category.id) === selectedCategoryId)
+      ? selectedCategoryId
+      : categories[0]
+        ? String(categories[0].id)
+        : "";
+
+  const selectedSummary = useMemo(() => {
+    if (!summaries.length) return null;
+
+    const selectedId = resolvedSelectedCategoryId ? Number(resolvedSelectedCategoryId) : categories[0]?.id;
+    if (!selectedId) return summaries[0];
+
+    return latestSummariesByCategory.get(selectedId) ?? summaries[0];
+  }, [categories, latestSummariesByCategory, resolvedSelectedCategoryId, summaries]);
+
+  if (!summaries.length) {
+    return (
+      <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+        Add a family budget to see allocation summaries and overage warnings.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-2 sm:max-w-sm">
+        <Label htmlFor="allocation-category-filter" className="text-sm font-medium">
+          Category
+        </Label>
+        <select
+          id="allocation-category-filter"
+          value={resolvedSelectedCategoryId}
+          onChange={(event) => setSelectedCategoryId(event.target.value)}
+          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+        >
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {selectedSummary ? <SummaryCard summary={selectedSummary} members={members} /> : null}
+    </div>
+  );
+}
+
 function PersonalBudgetSection({
   categories,
   budgets,
@@ -326,8 +416,15 @@ function FamilyBudgetSection({
   );
 }
 
-function SummaryCard({ summary }: { summary: BudgetAllocationSummaryDto }) {
+function SummaryCard({
+  summary,
+  members,
+}: {
+  summary: BudgetAllocationSummaryDto;
+  members: FinanceMemberDto[];
+}) {
   const isOverBudget = Boolean(summary.overageAmount);
+  const memberLookup = new Map(members.map((member) => [member.id, member.name]));
 
   return (
     <Card className="py-2">
@@ -345,7 +442,7 @@ function SummaryCard({ summary }: { summary: BudgetAllocationSummaryDto }) {
         </div>
         <p className="text-sm text-muted-foreground">{summary.monthLabel}</p>
       </CardHeader>
-      <CardContent className="space-y-3 px-4 pb-6 sm:px-8 sm:pb-8">
+      <CardContent className="space-y-4 px-4 pb-6 sm:px-8 sm:pb-8">
         <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
           <div className="rounded-lg border bg-muted/30 p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Family Budget</p>
@@ -373,6 +470,34 @@ function SummaryCard({ summary }: { summary: BudgetAllocationSummaryDto }) {
             ⚠ Family {summary.categoryName} budget exceeded by {formatMoney(summary.overageAmount ?? "0")}
           </div>
         ) : null}
+
+        <div className="rounded-lg border bg-muted/20 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-medium">Family allocation details</p>
+            <Badge variant="outline">{summary.personalBudgets.length} user(s)</Badge>
+          </div>
+          {summary.personalBudgets.length ? (
+            <ul className="mt-3 space-y-2">
+              {summary.personalBudgets.map((budget) => (
+                <li
+                  key={budget.id}
+                  className="flex flex-col gap-1 rounded-md border bg-background/70 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <p className="font-medium">{getMemberName(memberLookup, budget.userId)}</p>
+                    <p className="text-xs text-muted-foreground">{budget.monthLabel}</p>
+                  </div>
+                  <div className="text-sm text-muted-foreground sm:text-right">
+                    <p className="font-medium text-foreground">{formatMoney(budget.amount)}</p>
+                    <p>{formatBudgetShare(budget.amount, summary.familyBudget?.amount ?? "0")}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted-foreground">No personal budgets have been assigned to this family budget yet.</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -403,17 +528,7 @@ export function BudgetManagement({
           </p>
         </CardHeader>
         <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
-          {data.allocationSummaries.length ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {data.allocationSummaries.map((summary) => (
-                <SummaryCard key={`${summary.categoryId}-${summary.month}`} summary={summary} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-              Add a family budget to see allocation summaries and overage warnings.
-            </div>
-          )}
+          <AllocationSummaryPanel summaries={data.allocationSummaries} members={data.members} />
         </CardContent>
       </Card>
 

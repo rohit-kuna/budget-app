@@ -42,6 +42,13 @@ export type BudgetAllocationSummaryDto = {
   overageAmount: string | null;
 };
 
+export type FinanceMemberDto = {
+  id: string;
+  email: string;
+  name: string;
+  role: "ADMIN" | "USER";
+};
+
 export type OrganizationFinanceDataDto = {
   organization: {
     id: number;
@@ -52,6 +59,7 @@ export type OrganizationFinanceDataDto = {
     updatedAt: string;
   } | null;
   categories: CategoryRecordDto[];
+  members: FinanceMemberDto[];
   budgets: BudgetRecordDto[];
   allocationSummaries: BudgetAllocationSummaryDto[];
   currentUser: {

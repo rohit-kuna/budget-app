@@ -66,6 +66,12 @@ export const categories = pgTable(
   })
 );
 
+export const counterParty = pgTable("counter_party", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  orgId: integer("org_id").notNull().references(() => organizations.id)
+});
+
 export const expenses = pgTable(
   "expenses",
   {
@@ -73,6 +79,9 @@ export const expenses = pgTable(
     orgId: integer("org_id").notNull().references(() => organizations.id),
     userId: uuid("user_id").notNull().references(() => users.id),
     categoryId: integer("category_id").notNull().references(() => categories.id),
+    counterPartyId: integer("counter_party_id").references(() => counterParty.id, {
+      onDelete: "set null",
+    }),
     amount: numeric("amt", { precision: 12, scale: 2 }).notNull(),
     type: varchar("type", { length: 10 }).notNull().default("expense").$type<ExpenseType>(),
     transactionMode: varchar("transaction_mode", { length: 10 }).notNull().default("online").$type<ExpenseMode>(),
@@ -91,6 +100,7 @@ export const expenses = pgTable(
     orgIdx: index("expenses_org_id_idx").on(table.orgId),
     userIdx: index("expenses_user_id_idx").on(table.userId),
     categoryIdx: index("expenses_category_id_idx").on(table.categoryId),
+    counterPartyIdx: index("expenses_counter_party_id_idx").on(table.counterPartyId),
     occurredAtIdx: index("expenses_occurred_at_idx").on(table.occurredAt),
   })
 );

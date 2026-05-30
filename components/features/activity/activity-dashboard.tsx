@@ -52,13 +52,31 @@ const expenseLegendItems = [
   { label: "Expense", color: "var(--color-chart-1)" },
 ] as const;
 
-const budgetLegendItems = [
-  { label: "Budget", color: "var(--color-chart-4)" },
-  { label: "Actual", color: "var(--color-chart-1)" },
+const budgetVsActualLegendItems = [
+  { label: "Budgeted amount", color: "var(--color-chart-4)" },
+  { label: "Actual spend", color: "var(--color-chart-1)" },
+] as const;
+
+const categoryLegendItems = [
+  { label: "Top 3 categories", color: "var(--color-chart-2)" },
+  { label: "Other categories", color: "var(--color-chart-5)" },
+] as const;
+
+const necessityLegendItems = [
+  { label: "Essential", color: "var(--color-chart-1)" },
+  { label: "Important", color: "var(--color-chart-2)" },
+  { label: "Moderate", color: "var(--color-chart-3)" },
+  { label: "Nice to have", color: "var(--color-chart-4)" },
+  { label: "Optional", color: "var(--color-chart-5)" },
+] as const;
+
+const trendLegendItems = [
+  { label: "Previous period", color: "var(--color-chart-4)" },
+  { label: "Current period", color: "var(--color-chart-2)" },
 ] as const;
 
 type NecessityScore = 1 | 2 | 3 | 4 | 5;
-type ActivityAudience = "personal" | "family";
+type ActivityAudience = "personal" | "family" | `member:${string}`;
 
 const necessityLabels: Record<NecessityScore, string> = {
   1: "Optional",
@@ -166,7 +184,21 @@ function getScopedActivityData(data: ActivityDashboardDataDto, audience: Activit
     return {
       ...data,
       budgets: data.budgets.filter((budget) => budget.scope === "family"),
-      expenses: data.expenses.filter((expense) => expense.scope === "family"),
+      expenses: data.expenses,
+    };
+  }
+
+  if (audience.startsWith("member:")) {
+    const memberId = audience.slice("member:".length);
+
+    return {
+      ...data,
+      budgets: data.budgets.filter(
+        (budget) => budget.scope === "personal" && budget.userId === memberId
+      ),
+      expenses: data.expenses.filter(
+        (expense) => expense.scope === "personal" && expense.userId === memberId
+      ),
     };
   }
 
@@ -227,6 +259,16 @@ function OrderedLegend({
     </div>
   );
 }
+
+type BudgetVsActualTooltipPayload = {
+  payload?: {
+    categoryName: string;
+    budget: number;
+    actual: number;
+    remaining: number;
+    overBudget: number;
+  };
+};
 
 function SectionHeader({
   title,
@@ -492,11 +534,13 @@ function BudgetVsActualChart({
   expenses,
   monthStart,
   monthEnd,
+  audience,
 }: {
   budgets: ActivityDashboardDataDto["budgets"];
   expenses: ActivityDashboardDataDto["expenses"];
   monthStart: string;
   monthEnd: string;
+  audience: ActivityAudience;
 }) {
   const budgetMonths = useMemo(() => {
     const months = budgets
@@ -610,11 +654,40 @@ function BudgetVsActualChart({
                 <YAxis tickFormatter={(value) => formatCompactMoney(Number(value))} width={72} tick={{ fontSize: 12 }} />
                 <Tooltip
                   shared={false}
-                  formatter={(value, name) => [formatMoney(Number(value ?? 0)), String(name)]}
-                  labelFormatter={(label) => String(label)}
                   cursor={{ fill: "var(--color-muted)" }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+
+                    const row = (payload[0] as BudgetVsActualTooltipPayload).payload;
+                    if (!row) return null;
+
+                    return (
+                      <div className="rounded-lg border bg-background px-3 py-2 text-sm shadow-lg">
+                        <p className="font-medium">{row.categoryName}</p>
+                        <div className="mt-2 space-y-1 text-muted-foreground">
+                          <p>Budget: {formatMoney(row.budget)}</p>
+                          <p>Actual: {formatMoney(row.actual)}</p>
+                          <p>Remaining: {formatMoney(row.remaining)}</p>
+                          {row.overBudget > 0 ? <p>Over budget: {formatMoney(row.overBudget)}</p> : null}
+                        </div>
+                      </div>
+                    );
+                  }}
                 />
-                <Legend content={<OrderedLegend items={budgetLegendItems} />} />
+                <Legend
+                  content={
+                    <OrderedLegend
+                      items={
+                        audience === "family"
+                          ? [
+                              { label: "Family budget", color: "var(--color-chart-4)" },
+                              { label: "Family spend", color: "var(--color-chart-1)" },
+                            ]
+                          : budgetVsActualLegendItems
+                      }
+                    />
+                  }
+                />
                 <Bar dataKey="budget" name="Budget" radius={[6, 6, 0, 0]}>
                   {chartData.map((entry) => (
                     <Cell key={`budget-${entry.categoryId}`} fill="var(--color-chart-4)" />
@@ -806,7 +879,7 @@ function CategoryByTypeChart({
                   labelFormatter={(label) => String(label)}
                   cursor={{ fill: "var(--color-muted)" }}
                 />
-                <Legend />
+                <Legend content={<OrderedLegend items={categoryLegendItems} />} />
                 <Bar dataKey="amount" name="Total amount" radius={[0, 8, 8, 0]}>
                   {chartData.map((entry) => (
                     <Cell
@@ -995,7 +1068,7 @@ function NecessitySpendChart({
                   labelFormatter={(label) => String(label)}
                   cursor={{ fill: "var(--color-muted)" }}
                 />
-                <Legend />
+                <Legend content={<OrderedLegend items={necessityLegendItems} />} />
                 {[
                   { key: "essential", label: necessityLabels[5], color: "var(--color-chart-1)" },
                   { key: "important", label: necessityLabels[4], color: "var(--color-chart-2)" },
@@ -1173,7 +1246,7 @@ function ExpenseTrendChart({
                 labelFormatter={(label) => String(label)}
                 cursor={{ stroke: "var(--color-muted)" }}
               />
-              <Legend />
+              <Legend content={<OrderedLegend items={trendLegendItems} />} />
               <Line
                 type="monotone"
                 dataKey="current"
@@ -1216,6 +1289,7 @@ export function ActivityDashboard({
   const [monthStart, setMonthStart] = useState(minMonth);
   const [monthEnd, setMonthEnd] = useState(maxMonth);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const isAdmin = data.currentUser.role === "ADMIN";
 
   const scopedData = useMemo(() => getScopedActivityData(data, audience), [data, audience]);
   const visibleData = useMemo(() => {
@@ -1277,6 +1351,15 @@ export function ActivityDashboard({
               >
                 <option value="personal">Personal</option>
                 <option value="family">Family</option>
+                {isAdmin ? (
+                  <optgroup label="Family members">
+                    {data.members.map((member) => (
+                      <option key={member.id} value={`member:${member.id}`}>
+                        {member.id === data.currentUser.id ? `${member.name} (You)` : member.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
               </select>
             </div>
 
@@ -1330,6 +1413,7 @@ export function ActivityDashboard({
         expenses={visibleData.expenses}
         monthStart={monthStart}
         monthEnd={monthEnd}
+        audience={audience}
       />
 
       <CategoryByTypeChart

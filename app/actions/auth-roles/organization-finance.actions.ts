@@ -20,6 +20,7 @@ import {
   getBudgetById,
   updateBudgetRecord,
 } from "@/app/actions/tables/budgets.table.actions";
+import { getOrganizationMembers } from "@/app/actions/tables/organizations.table.actions";
 import { buildBudgetAllocationSummaries } from "@/app/lib/budget-utils";
 import { getBudgetMonthBounds, isValidBudgetMonth } from "@/app/lib/budget-month";
 import type { FinanceActionState } from "@/app/actions/auth-roles/finance.types";
@@ -81,6 +82,7 @@ export async function getOrganizationFinanceData(): Promise<OrganizationFinanceD
     return {
       organization: null,
       categories: [],
+      members: [],
       budgets: [],
       allocationSummaries: [],
       currentUser: {
@@ -91,10 +93,11 @@ export async function getOrganizationFinanceData(): Promise<OrganizationFinanceD
     };
   }
 
-  const [organization, categories, budgets] = await Promise.all([
+  const [organization, categories, budgets, members] = await Promise.all([
     getOrganizationById(currentUser.orgId),
     getCategoriesByOrg(currentUser.orgId),
     getBudgetsByOrg(currentUser.orgId),
+    getOrganizationMembers(currentUser.orgId),
   ]);
   const allocationSummaries = buildBudgetAllocationSummaries(budgets);
   const visibleBudgets = budgets.filter(
@@ -104,6 +107,12 @@ export async function getOrganizationFinanceData(): Promise<OrganizationFinanceD
   return {
     organization: toOrganizationDto(organization),
     categories,
+    members: members.map((member) => ({
+      id: member.id,
+      email: member.email,
+      name: member.name,
+      role: member.role,
+    })),
     budgets: visibleBudgets,
     allocationSummaries,
     currentUser: {
