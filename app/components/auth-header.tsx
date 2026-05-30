@@ -49,6 +49,7 @@ const adminNavItems: HeaderNavItem[] = [
   { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
   { label: "Transfers", href: ROUTES.TRANSFERS, match: "prefix" },
   { label: "Counterparties", href: ROUTES.COUNTERPARTIES, match: "prefix" },
+  { label: "Transaction modes", href: ROUTES.TRANSACTION_MODES, match: "prefix" },
 ];
 
 const userNavItems: HeaderNavItem[] = [
@@ -58,6 +59,7 @@ const userNavItems: HeaderNavItem[] = [
   { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
   { label: "Transfers", href: ROUTES.TRANSFERS, match: "prefix" },
   { label: "Counterparties", href: ROUTES.COUNTERPARTIES, match: "prefix" },
+  { label: "Transaction modes", href: ROUTES.TRANSACTION_MODES, match: "prefix" },
 ];
 
 const dashboardNavItem: HeaderNavItem = {
@@ -183,6 +185,9 @@ export function AuthHeader({ role, hasOrganization, organizationName }: AuthHead
                     <DropdownMenuItem asChild>
                       <Link href={ROUTES.COUNTERPARTIES}>Counterparties</Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={ROUTES.TRANSACTION_MODES}>Transaction modes</Link>
+                    </DropdownMenuItem>
                   </>
                 ) : null}
               </DropdownMenuContent>
@@ -235,6 +240,9 @@ export function AuthHeader({ role, hasOrganization, organizationName }: AuthHead
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href={ROUTES.COUNTERPARTIES}>Counterparties</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={ROUTES.TRANSACTION_MODES}>Transaction modes</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>

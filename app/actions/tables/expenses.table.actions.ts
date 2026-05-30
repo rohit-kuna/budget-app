@@ -1,10 +1,12 @@
 "use server";
 
-import { desc, eq } from "drizzle-orm";
+import { aliasedTable, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { categories, counterParty, expenses, users } from "@/db/schema";
+import { categories, counterParty, expenses, transactionModes, users } from "@/db/schema";
 import type { ExpenseRecordDto } from "@/app/lib/expense.types";
-import type { ExpenseMode, ExpenseScope, ExpenseType, TransferStatus } from "@/db/schema";
+import type { ExpenseScope, ExpenseType, TransferStatus } from "@/db/schema";
+
+const transactionModeOwner = aliasedTable(users, "transactionModeOwner");
 
 function toExpenseDto(
   record: typeof expenses.$inferSelect & {
@@ -12,6 +14,8 @@ function toExpenseDto(
     userName: string;
     userEmail: string;
     counterPartyName: string | null;
+    transactionModeName: string | null;
+    transactionModeOwnerName: string | null;
   }
 ): ExpenseRecordDto {
   return {
@@ -24,9 +28,11 @@ function toExpenseDto(
     categoryName: record.categoryName,
     counterPartyId: record.counterPartyId,
     counterPartyName: record.counterPartyName,
+    transactionModeId: record.transactionModeId,
+    transactionModeName: record.transactionModeName,
+    transactionModeOwnerName: record.transactionModeOwnerName,
     amount: record.amount.toString(),
     type: record.type as ExpenseType,
-    transactionMode: record.transactionMode as ExpenseMode,
     scope: record.scope as ExpenseScope,
     transferStatus: (record.transferStatus as TransferStatus | null) ?? null,
     necessityScore: Number(record.necessityScore),
@@ -48,9 +54,11 @@ function expenseSelectShape() {
     categoryName: categories.name,
     counterPartyId: expenses.counterPartyId,
     counterPartyName: counterParty.name,
+    transactionModeId: expenses.transactionModeId,
+    transactionModeName: transactionModes.name,
+    transactionModeOwnerName: transactionModeOwner.name,
     amount: expenses.amount,
     type: expenses.type,
-    transactionMode: expenses.transactionMode,
     scope: expenses.scope,
     transferStatus: expenses.transferStatus,
     necessityScore: expenses.necessityScore,
@@ -68,6 +76,8 @@ export async function getExpensesByOrg(orgId: number): Promise<ExpenseRecordDto[
     .innerJoin(categories, eq(categories.id, expenses.categoryId))
     .innerJoin(users, eq(users.id, expenses.userId))
     .leftJoin(counterParty, eq(counterParty.id, expenses.counterPartyId))
+    .leftJoin(transactionModes, eq(transactionModes.id, expenses.transactionModeId))
+    .leftJoin(transactionModeOwner, eq(transactionModeOwner.id, transactionModes.userId))
     .where(eq(expenses.orgId, orgId))
     .orderBy(desc(expenses.occurredAt), desc(expenses.createdAt));
 
@@ -81,6 +91,8 @@ export async function getExpenseById(id: number): Promise<ExpenseRecordDto | nul
     .innerJoin(categories, eq(categories.id, expenses.categoryId))
     .innerJoin(users, eq(users.id, expenses.userId))
     .leftJoin(counterParty, eq(counterParty.id, expenses.counterPartyId))
+    .leftJoin(transactionModes, eq(transactionModes.id, expenses.transactionModeId))
+    .leftJoin(transactionModeOwner, eq(transactionModeOwner.id, transactionModes.userId))
     .where(eq(expenses.id, id))
     .limit(1);
 
@@ -92,10 +104,10 @@ export async function createExpenseRecord(input: {
   userId: string;
   categoryId: number;
   counterPartyId: number | null;
+  transactionModeId: number | null;
   transferStatus: TransferStatus | null;
   amount: string;
   type: ExpenseType;
-  transactionMode: ExpenseMode;
   scope: ExpenseScope;
   necessityScore: number;
   note: string | null;
@@ -110,10 +122,10 @@ export async function updateExpenseRecord(
   input: Partial<{
     categoryId: number;
     counterPartyId: number | null;
+    transactionModeId: number | null;
     transferStatus: TransferStatus | null;
     amount: string;
     type: ExpenseType;
-    transactionMode: ExpenseMode;
     scope: ExpenseScope;
     necessityScore: number;
     note: string | null;

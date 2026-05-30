@@ -1,4 +1,8 @@
-import type { CategoryRecordDto, CounterpartyRecordDto } from "@/app/lib/finance.types";
+import type {
+  CategoryRecordDto,
+  CounterpartyRecordDto,
+  TransactionModeRecordDto,
+} from "@/app/lib/finance.types";
 
 export type ExpenseRecordDto = {
   id: number;
@@ -10,9 +14,11 @@ export type ExpenseRecordDto = {
   categoryName: string;
   counterPartyId: number | null;
   counterPartyName: string | null;
+  transactionModeId: number | null;
+  transactionModeName: string | null;
+  transactionModeOwnerName: string | null;
   amount: string;
   type: "expense" | "income";
-  transactionMode: "online" | "cash";
   scope: "personal" | "family";
   transferStatus: "open" | "settled" | "closed" | null;
   necessityScore: number;
@@ -33,6 +39,7 @@ export type TransferDashboardDataDto = {
   } | null;
   categories: CategoryRecordDto[];
   counterparties: CounterpartyRecordDto[];
+  transactionModes: TransactionModeRecordDto[];
   expenses: ExpenseRecordDto[];
   currentUser: {
     id: string;
@@ -52,6 +59,7 @@ export type ExpensesDashboardDataDto = {
   } | null;
   categories: CategoryRecordDto[];
   counterparties: CounterpartyRecordDto[];
+  transactionModes: TransactionModeRecordDto[];
   expenses: ExpenseRecordDto[];
   currentUser: {
     id: string;

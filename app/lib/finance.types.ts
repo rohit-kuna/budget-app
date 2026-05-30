@@ -50,6 +50,16 @@ export type CounterpartyRecordDto = {
   updatedAt: string;
 };
 
+export type TransactionModeRecordDto = {
+  id: number;
+  name: string;
+  userId: string;
+  userName: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type FinanceMemberDto = {
   id: string;
   email: string;
@@ -68,6 +78,7 @@ export type OrganizationFinanceDataDto = {
   } | null;
   categories: CategoryRecordDto[];
   counterparties: CounterpartyRecordDto[];
+  transactionModes: TransactionModeRecordDto[];
   members: FinanceMemberDto[];
   budgets: BudgetRecordDto[];
   allocationSummaries: BudgetAllocationSummaryDto[];

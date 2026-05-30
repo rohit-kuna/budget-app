@@ -1,7 +1,15 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { flexRender, getCoreRowModel, getSortedRowModel, type Column, type ColumnDef, type SortingState, useReactTable } from "@tanstack/react-table";
+import {
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  type Column,
+  type ColumnDef,
+  type SortingState,
+  useReactTable,
+} from "@tanstack/react-table";
 import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, PencilLine, Trash2, X } from "lucide-react";
 import { financeInitialState } from "@/app/actions/auth-roles/finance.types";
 import {
@@ -9,7 +17,11 @@ import {
   deleteExpenseAction,
   updateExpenseAction,
 } from "@/app/actions/auth-roles/expense.actions";
-import type { CategoryRecordDto, CounterpartyRecordDto } from "@/app/lib/finance.types";
+import type {
+  CategoryRecordDto,
+  CounterpartyRecordDto,
+  TransactionModeRecordDto,
+} from "@/app/lib/finance.types";
 import type { ExpenseRecordDto, ExpensesDashboardDataDto } from "@/app/lib/expense.types";
 import { getTodayExpenseDateInputValue, formatExpenseDate } from "@/app/lib/expense-date";
 import { Button } from "@/components/ui/button";
@@ -38,11 +50,6 @@ const expenseTypes = [
   { value: "income", label: "Income" },
 ] as const;
 
-const expenseModes = [
-  { value: "online", label: "Online" },
-  { value: "cash", label: "Cash" },
-] as const;
-
 const expenseScopes = [
   { value: "personal", label: "Personal" },
   { value: "family", label: "Family" },
@@ -56,6 +63,10 @@ function formatMoney(amount: string) {
 
 function formatNecessityScore(score: number) {
   return String(score);
+}
+
+function formatTransactionModeLabel(mode: TransactionModeRecordDto) {
+  return mode.isDefault ? `${mode.name} (default)` : mode.name;
 }
 
 function ActionError({ message }: { message: string | null }) {
@@ -118,9 +129,7 @@ function FormSelect({
       className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
       required={required}
     >
-      {includeEmptyOption ? (
-        <option value="">{includeEmptyOption}</option>
-      ) : null}
+      {includeEmptyOption ? <option value="">{includeEmptyOption}</option> : null}
       {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
@@ -154,11 +163,7 @@ function FilterSelect({
   );
 }
 
-function NecessityScoreSlider({
-  defaultValue,
-}: {
-  defaultValue: number;
-}) {
+function NecessityScoreSlider({ defaultValue }: { defaultValue: number }) {
   const [value, setValue] = useState(String(defaultValue));
 
   return (
@@ -221,37 +226,33 @@ function SortableHeader({
 function ExpenseFormCard({
   categories,
   counterparties,
+  transactionModes,
   editingExpense,
   onCancelEdit,
 }: {
   categories: CategoryRecordDto[];
   counterparties: CounterpartyRecordDto[];
+  transactionModes: TransactionModeRecordDto[];
   editingExpense: ExpenseRecordDto | null;
   onCancelEdit: () => void;
 }) {
-  const [createState, createAction, createPending] = useActionState(
-    createExpenseAction,
-    financeInitialState
-  );
-  const [updateState, updateAction, updatePending] = useActionState(
-    updateExpenseAction,
-    financeInitialState
-  );
+  const [createState, createAction, createPending] = useActionState(createExpenseAction, financeInitialState);
+  const [updateState, updateAction, updatePending] = useActionState(updateExpenseAction, financeInitialState);
 
   const isEditing = Boolean(editingExpense);
   const activeAction = isEditing ? updateAction : createAction;
   const activePending = isEditing ? updatePending : createPending;
   const activeError = isEditing ? updateState.error : createState.error;
-  const defaultOccurredAt = editingExpense
-    ? editingExpense.occurredAt.slice(0, 10)
-    : getTodayExpenseDateInputValue();
+  const defaultOccurredAt = editingExpense ? editingExpense.occurredAt.slice(0, 10) : getTodayExpenseDateInputValue();
+  const defaultTransactionModeId = editingExpense?.transactionModeId
+    ? String(editingExpense.transactionModeId)
+    : String(transactionModes.find((mode) => mode.isDefault)?.id ?? transactionModes[0]?.id ?? "");
   const [selectedCategoryId, setSelectedCategoryId] = useState(
     editingExpense?.categoryId ?? categories[0]?.id ?? 0
   );
-  const resolvedSelectedCategoryId =
-    categories.some((category) => category.id === selectedCategoryId)
-      ? selectedCategoryId
-      : editingExpense?.categoryId ?? categories[0]?.id ?? 0;
+  const resolvedSelectedCategoryId = categories.some((category) => category.id === selectedCategoryId)
+    ? selectedCategoryId
+    : editingExpense?.categoryId ?? categories[0]?.id ?? 0;
 
   const selectedCategory = useMemo(
     () => categories.find((category) => category.id === resolvedSelectedCategoryId) ?? null,
@@ -261,14 +262,16 @@ function ExpenseFormCard({
   return (
     <Card className="border-primary/20 bg-primary/5 py-2">
       <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
-        <CardTitle className="text-2xl tracking-tight">
-          {isEditing ? "Edit expense" : "Add expense"}
-        </CardTitle>
+        <CardTitle className="text-2xl tracking-tight">{isEditing ? "Edit expense" : "Add expense"}</CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
         {!categories.length ? (
           <div className="rounded-lg border border-dashed bg-background/80 p-4 text-sm text-muted-foreground">
             Create categories first, then you can add expenses.
+          </div>
+        ) : !transactionModes.length ? (
+          <div className="rounded-lg border border-dashed bg-background/80 p-4 text-sm text-muted-foreground">
+            Create your transaction modes first, then you can add expenses.
           </div>
         ) : (
           <form
@@ -279,11 +282,7 @@ function ExpenseFormCard({
             {editingExpense ? <input type="hidden" name="expenseId" value={editingExpense.id} /> : null}
             <div className="space-y-2">
               <Label>Category</Label>
-              <CategorySelect
-                categories={categories}
-                value={resolvedSelectedCategoryId}
-                onChange={setSelectedCategoryId}
-              />
+              <CategorySelect categories={categories} value={resolvedSelectedCategoryId} onChange={setSelectedCategoryId} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="expense-type">Type</Label>
@@ -309,20 +308,19 @@ function ExpenseFormCard({
               />
             </div>
             <div className="space-y-2">
-              <Label>Mode</Label>
+              <Label>Transaction mode</Label>
               <FormSelect
-                name="transactionMode"
-                defaultValue={editingExpense?.transactionMode ?? "online"}
-                options={expenseModes}
+                name="transactionModeId"
+                defaultValue={defaultTransactionModeId}
+                options={transactionModes.map((mode) => ({
+                  value: String(mode.id),
+                  label: formatTransactionModeLabel(mode),
+                }))}
               />
             </div>
             <div className="space-y-2">
               <Label>Scope</Label>
-              <FormSelect
-                name="scope"
-                defaultValue={editingExpense?.scope ?? "personal"}
-                options={expenseScopes}
-              />
+              <FormSelect name="scope" defaultValue={editingExpense?.scope ?? "personal"} options={expenseScopes} />
             </div>
             <div className="space-y-2">
               <NecessityScoreSlider defaultValue={editingExpense?.necessityScore ?? 1} />
@@ -330,23 +328,17 @@ function ExpenseFormCard({
             <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="expense-date">Date</Label>
-                <Input
-                  id="expense-date"
-                  name="occurredAt"
-                  type="date"
-                  defaultValue={defaultOccurredAt}
-                  required
-                />
+                <Input id="expense-date" name="occurredAt" type="date" defaultValue={defaultOccurredAt} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="expense-counterparty">Counterparty</Label>
-              <FormSelect
-                id="expense-counterparty"
-                name="counterPartyId"
-                defaultValue={editingExpense?.counterPartyId ? String(editingExpense.counterPartyId) : ""}
-                options={counterparties.map((counterparty) => ({
-                  value: String(counterparty.id),
-                  label: counterparty.name,
+                <FormSelect
+                  id="expense-counterparty"
+                  name="counterPartyId"
+                  defaultValue={editingExpense?.counterPartyId ? String(editingExpense.counterPartyId) : ""}
+                  options={counterparties.map((counterparty) => ({
+                    value: String(counterparty.id),
+                    label: counterparty.name,
                   }))}
                   required={false}
                   includeEmptyOption="No counterparty"
@@ -367,7 +359,7 @@ function ExpenseFormCard({
               />
             </div>
             <div className="flex flex-wrap gap-2 sm:col-span-2">
-              <Badge variant="secondary">Default: online</Badge>
+              <Badge variant="secondary">Default: {transactionModes.find((mode) => mode.isDefault)?.name ?? "none"}</Badge>
               <Badge variant="secondary">Default: 1</Badge>
             </div>
             <div className="sm:col-span-2">
@@ -400,10 +392,7 @@ function ExpenseRowActions({
   onEdit: (expense: ExpenseRecordDto) => void;
   canManage: boolean;
 }) {
-  const [deleteState, deleteAction, deletePending] = useActionState(
-    deleteExpenseAction,
-    financeInitialState
-  );
+  const [deleteState, deleteAction, deletePending] = useActionState(deleteExpenseAction, financeInitialState);
 
   if (!canManage) {
     return <span className="text-xs text-muted-foreground">Read only</span>;
@@ -411,16 +400,28 @@ function ExpenseRowActions({
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={() => onEdit(expense)}>
-          <PencilLine className="mr-2 size-4" />
-          Edit
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          onClick={() => onEdit(expense)}
+          aria-label="Edit expense"
+          title="Edit expense"
+        >
+          <PencilLine className="size-4" />
         </Button>
         <form action={deleteAction}>
           <input type="hidden" name="expenseId" value={expense.id} />
-          <Button type="submit" variant="destructive" size="sm" disabled={deletePending}>
-            <Trash2 className="mr-2 size-4" />
-            {deletePending ? "Deleting..." : "Delete"}
+          <Button
+            type="submit"
+            variant="destructive"
+            size="icon-sm"
+            disabled={deletePending}
+            aria-label="Delete expense"
+            title="Delete expense"
+          >
+            <Trash2 className="size-4" />
           </Button>
         </form>
       </div>
@@ -431,11 +432,13 @@ function ExpenseRowActions({
 
 function ExpenseTable({
   expenses,
+  transactionModes,
   currentUserId,
   isAdmin,
   onEdit,
 }: {
   expenses: ExpenseRecordDto[];
+  transactionModes: TransactionModeRecordDto[];
   currentUserId: string;
   isAdmin: boolean;
   onEdit: (expense: ExpenseRecordDto) => void;
@@ -444,38 +447,47 @@ function ExpenseTable({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [ownerFilter, setOwnerFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [modeFilter, setModeFilter] = useState("all");
+  const [transactionModeFilter, setTransactionModeFilter] = useState("all");
   const [scopeFilter, setScopeFilter] = useState("all");
   const [necessityFilter, setNecessityFilter] = useState("all");
   const [monthFilter, setMonthFilter] = useState("all");
   const [sorting, setSorting] = useState<SortingState>([{ id: "occurredAt", desc: true }]);
 
   const categoryOptions = useMemo(
-    () =>
-      [
-        { value: "all", label: "All categories" },
-        ...Array.from(new Map(expenses.map((expense) => [expense.categoryId, expense.categoryName])).entries()).map(
-          ([id, name]) => ({
-            value: String(id),
-            label: name,
-          })
-        ),
-      ],
+    () => [
+      { value: "all", label: "All categories" },
+      ...Array.from(new Map(expenses.map((expense) => [expense.categoryId, expense.categoryName])).entries()).map(
+        ([id, name]) => ({
+          value: String(id),
+          label: name,
+        })
+      ),
+    ],
     [expenses]
   );
 
   const ownerOptions = useMemo(
-    () =>
-      [
-        { value: "all", label: "All users" },
-        ...Array.from(new Map(expenses.map((expense) => [expense.userId, expense.userName])).entries()).map(
-          ([id, name]) => ({
-            value: id,
-            label: name,
-          })
-        ),
-      ],
+    () => [
+      { value: "all", label: "All users" },
+      ...Array.from(new Map(expenses.map((expense) => [expense.userId, expense.userName])).entries()).map(
+        ([id, name]) => ({
+          value: id,
+          label: name,
+        })
+      ),
+    ],
     [expenses]
+  );
+
+  const transactionModeOptions = useMemo(
+    () => [
+      { value: "all", label: "All transaction modes" },
+      ...transactionModes.map((mode) => ({
+        value: String(mode.id),
+        label: formatTransactionModeLabel(mode),
+      })),
+    ],
+    [transactionModes]
   );
 
   const filteredExpenses = useMemo(() => {
@@ -485,7 +497,7 @@ function ExpenseTable({
       if (categoryFilter !== "all" && String(expense.categoryId) !== categoryFilter) return false;
       if (ownerFilter !== "all" && expense.userId !== ownerFilter) return false;
       if (typeFilter !== "all" && expense.type !== typeFilter) return false;
-      if (modeFilter !== "all" && expense.transactionMode !== modeFilter) return false;
+      if (transactionModeFilter !== "all" && String(expense.transactionModeId) !== transactionModeFilter) return false;
       if (scopeFilter !== "all" && expense.scope !== scopeFilter) return false;
       if (necessityFilter !== "all" && String(expense.necessityScore) !== necessityFilter) return false;
       if (monthFilter !== "all" && expense.occurredAt.slice(0, 7) !== monthFilter) return false;
@@ -496,16 +508,27 @@ function ExpenseTable({
         expense.categoryName,
         expense.userName,
         expense.counterPartyName ?? "",
+        expense.transactionModeName ?? "",
+        expense.transactionModeOwnerName ?? "",
         expense.note ?? "",
         expense.amount,
         expense.type,
-        expense.transactionMode,
         expense.scope,
         expense.transferStatus ?? "",
         String(expense.necessityScore),
       ].some((value) => value.toLowerCase().includes(loweredQuery));
     });
-  }, [expenses, categoryFilter, ownerFilter, typeFilter, modeFilter, scopeFilter, necessityFilter, monthFilter, query]);
+  }, [
+    expenses,
+    categoryFilter,
+    ownerFilter,
+    typeFilter,
+    transactionModeFilter,
+    scopeFilter,
+    necessityFilter,
+    monthFilter,
+    query,
+  ]);
 
   const columns = useMemo<ColumnDef<ExpenseRecordDto>[]>(
     () => [
@@ -536,9 +559,16 @@ function ExpenseTable({
         cell: ({ row }) => <Badge variant="secondary">{row.original.type}</Badge>,
       },
       {
-        accessorKey: "mode",
-        header: ({ column }) => <SortableHeader column={column} title="Mode" />,
-        cell: ({ row }) => <Badge variant="outline">{row.original.transactionMode}</Badge>,
+        accessorKey: "transactionModeName",
+        header: ({ column }) => <SortableHeader column={column} title="Transaction mode" />,
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <Badge variant="outline">{row.original.transactionModeName ?? "—"}</Badge>
+            {row.original.transactionModeOwnerName ? (
+              <p className="text-xs text-muted-foreground">{row.original.transactionModeOwnerName}</p>
+            ) : null}
+          </div>
+        ),
       },
       {
         accessorKey: "scope",
@@ -548,15 +578,14 @@ function ExpenseTable({
       {
         accessorKey: "transferStatus",
         header: ({ column }) => <SortableHeader column={column} title="Transfer status" />,
-        cell: ({ row }) => (
+        cell: ({ row }) =>
           row.original.counterPartyId ? (
             <Badge variant={row.original.transferStatus === "settled" ? "secondary" : "outline"}>
               {row.original.transferStatus ?? "open"}
             </Badge>
           ) : (
             "—"
-          )
-        ),
+          ),
       },
       {
         accessorKey: "necessityScore",
@@ -572,9 +601,7 @@ function ExpenseTable({
         accessorKey: "note",
         header: "Note",
         cell: ({ row }) => (
-          <span className="block max-w-[280px] truncate text-muted-foreground">
-            {row.original.note ?? "—"}
-          </span>
+          <span className="block max-w-[280px] truncate text-muted-foreground">{row.original.note ?? "—"}</span>
         ),
       },
       {
@@ -640,21 +667,15 @@ function ExpenseTable({
             <FilterSelect
               value={typeFilter}
               onChange={setTypeFilter}
-              options={[
-                { value: "all", label: "All types" },
-                ...expenseTypes,
-              ]}
+              options={[{ value: "all", label: "All types" }, ...expenseTypes]}
             />
           </div>
           <div className="space-y-2">
-            <Label>Mode</Label>
+            <Label>Transaction mode</Label>
             <FilterSelect
-              value={modeFilter}
-              onChange={setModeFilter}
-              options={[
-                { value: "all", label: "All modes" },
-                ...expenseModes,
-              ]}
+              value={transactionModeFilter}
+              onChange={setTransactionModeFilter}
+              options={transactionModeOptions}
             />
           </div>
           <div className="space-y-2">
@@ -662,10 +683,7 @@ function ExpenseTable({
             <FilterSelect
               value={scopeFilter}
               onChange={setScopeFilter}
-              options={[
-                { value: "all", label: "All scopes" },
-                ...expenseScopes,
-              ]}
+              options={[{ value: "all", label: "All scopes" }, ...expenseScopes]}
             />
           </div>
           <div className="space-y-2">
@@ -702,7 +720,7 @@ function ExpenseTable({
                 setCategoryFilter("all");
                 setOwnerFilter("all");
                 setTypeFilter("all");
-                setModeFilter("all");
+                setTransactionModeFilter("all");
                 setScopeFilter("all");
                 setNecessityFilter("all");
                 setMonthFilter("all");
@@ -720,10 +738,7 @@ function ExpenseTable({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead
-                      key={header.id}
-                      className={cn(header.column.id === "actions" && "text-center")}
-                    >
+                    <TableHead key={header.id} className={cn(header.column.id === "actions" && "text-center")}>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   ))}
@@ -737,9 +752,7 @@ function ExpenseTable({
                     {row.getVisibleCells().map((cell) => (
                       <TableCell
                         key={cell.id}
-                        className={cn(
-                          cell.column.id === "actions" && "align-top whitespace-nowrap text-left"
-                        )}
+                        className={cn(cell.column.id === "actions" && "align-top whitespace-nowrap text-left")}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
@@ -761,11 +774,7 @@ function ExpenseTable({
   );
 }
 
-export function ExpenseManagement({
-  data,
-}: {
-  data: ExpensesDashboardDataDto;
-}) {
+export function ExpenseManagement({ data }: { data: ExpensesDashboardDataDto }) {
   const [editingExpense, setEditingExpense] = useState<ExpenseRecordDto | null>(null);
   const isAdmin = data.currentUser.role === "ADMIN";
 
@@ -773,9 +782,9 @@ export function ExpenseManagement({
     <section className="space-y-6">
       <Card className="py-2">
         <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
-          <CardTitle className="text-3xl tracking-tight">Expenses</CardTitle>
+          <CardTitle className="text-3xl tracking-tight">Income and Expenses</CardTitle>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Add an expense quickly, then use filters and sorting to review your own spending.
+            Add an income or expense quickly, then use filters and sorting to review your own spending.
           </p>
         </CardHeader>
       </Card>
@@ -783,12 +792,14 @@ export function ExpenseManagement({
       <ExpenseFormCard
         categories={data.categories}
         counterparties={data.counterparties}
+        transactionModes={data.transactionModes}
         editingExpense={editingExpense}
         onCancelEdit={() => setEditingExpense(null)}
       />
 
       <ExpenseTable
         expenses={data.expenses}
+        transactionModes={data.transactionModes}
         currentUserId={data.currentUser.id}
         isAdmin={isAdmin}
         onEdit={setEditingExpense}

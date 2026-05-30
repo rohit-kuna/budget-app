@@ -4,6 +4,7 @@ import {
   varchar,
   timestamp,
   index,
+  uniqueIndex,
   serial,
   integer,
   smallint,
@@ -12,6 +13,7 @@ import {
   date,
   unique,
   check,
+  boolean,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
@@ -20,7 +22,6 @@ import type { AppRole } from "@/app/lib/roles";
 export type BudgetScope = "personal" | "family";
 export type ExpenseType = "expense" | "income";
 export type CategoryType = ExpenseType;
-export type ExpenseMode = "online" | "cash";
 export type ExpenseScope = "personal" | "family";
 export type TransferStatus = "open" | "settled" | "closed";
 
@@ -82,6 +83,25 @@ export const counterParty = pgTable(
   })
 );
 
+export const transactionModes = pgTable(
+  "transaction_modes",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    userId: uuid("user_id").notNull().references(() => users.id),
+    isDefault: boolean("is_default").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    transactionModeUserNameUnique: unique("transaction_modes_user_name_unique").on(table.userId, table.name),
+    transactionModeUserDefaultUnique: uniqueIndex("transaction_modes_user_default_unique")
+      .on(table.userId)
+      .where(sql`${table.isDefault}`),
+    transactionModeUserIdx: index("transaction_modes_user_id_idx").on(table.userId),
+  })
+);
+
 export const expenses = pgTable(
   "expenses",
   {
@@ -92,10 +112,12 @@ export const expenses = pgTable(
     counterPartyId: integer("counter_party_id").references(() => counterParty.id, {
       onDelete: "set null",
     }),
+    transactionModeId: integer("transaction_mode_id").references(() => transactionModes.id, {
+      onDelete: "set null",
+    }),
     transferStatus: varchar("transfer_status", { length: 10 }).$type<TransferStatus>(),
     amount: numeric("amt", { precision: 12, scale: 2 }).notNull(),
     type: varchar("type", { length: 10 }).notNull().default("expense").$type<ExpenseType>(),
-    transactionMode: varchar("transaction_mode", { length: 10 }).notNull().default("online").$type<ExpenseMode>(),
     scope: varchar("scope", { length: 10 }).notNull().default("personal").$type<ExpenseScope>(),
     necessityScore: smallint("necessity_score").notNull().default(1),
     note: text("note"),
@@ -112,6 +134,7 @@ export const expenses = pgTable(
     userIdx: index("expenses_user_id_idx").on(table.userId),
     categoryIdx: index("expenses_category_id_idx").on(table.categoryId),
     counterPartyIdx: index("expenses_counter_party_id_idx").on(table.counterPartyId),
+    transactionModeIdx: index("expenses_transaction_mode_id_idx").on(table.transactionModeId),
     transferStatusIdx: index("expenses_transfer_status_idx").on(table.transferStatus),
     occurredAtIdx: index("expenses_occurred_at_idx").on(table.occurredAt),
   })

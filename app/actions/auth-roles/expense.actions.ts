@@ -17,6 +17,10 @@ import {
   getCounterpartiesByOrg,
   getCounterpartyById,
 } from "@/app/actions/tables/counterparties.table.actions";
+import {
+  ensureDefaultTransactionModesForUser,
+  getTransactionModeById,
+} from "@/app/actions/tables/transaction-modes.table.actions";
 import type { FinanceActionState } from "@/app/actions/auth-roles/finance.types";
 import type { ExpensesDashboardDataDto, TransferDashboardDataDto } from "@/app/lib/expense.types";
 import { parseExpenseDate } from "@/app/lib/expense-date";
@@ -27,12 +31,8 @@ const expenseSchema = z.object({
     (value) => (typeof value === "string" && value.trim() ? value : undefined),
     z.coerce.number().int().positive().optional()
   ),
-  transferStatus: z.preprocess(
-    (value) => (typeof value === "string" && value.trim() ? value : undefined),
-    z.enum(["open", "settled", "closed"]).optional()
-  ),
+  transactionModeId: z.coerce.number().int().positive(),
   amount: z.coerce.number().positive("Amount must be greater than zero"),
-  transactionMode: z.enum(["online", "cash"]),
   scope: z.enum(["personal", "family"]),
   necessityScore: z.coerce.number().int().min(1, "Necessity score must be between 1 and 5").max(5),
   note: z.string().trim().max(500).nullable(),
@@ -120,6 +120,7 @@ export async function getExpensesDashboardData(): Promise<ExpensesDashboardDataD
       organization: null,
       categories: [],
       counterparties: [],
+      transactionModes: [],
       expenses: [],
       currentUser: {
         id: currentUser.id,
@@ -135,6 +136,7 @@ export async function getExpensesDashboardData(): Promise<ExpensesDashboardDataD
     getCounterpartiesByOrg(currentUser.orgId),
     getExpensesByOrg(currentUser.orgId),
   ]);
+  const transactionModes = await ensureDefaultTransactionModesForUser(currentUser.id);
   const visibleExpenses = expenses.filter(
     (expense) => expense.scope === "family" || (expense.scope === "personal" && expense.userId === currentUser.id)
   );
@@ -143,6 +145,7 @@ export async function getExpensesDashboardData(): Promise<ExpensesDashboardDataD
     organization: toOrganizationDto(organization),
     categories,
     counterparties,
+    transactionModes,
     expenses: visibleExpenses,
     currentUser: {
       id: currentUser.id,
@@ -160,6 +163,7 @@ export async function getTransfersDashboardData(): Promise<TransferDashboardData
       organization: null,
       categories: [],
       counterparties: [],
+      transactionModes: [],
       expenses: [],
       currentUser: {
         id: currentUser.id,
@@ -175,6 +179,7 @@ export async function getTransfersDashboardData(): Promise<TransferDashboardData
     getCounterpartiesByOrg(currentUser.orgId),
     getExpensesByOrg(currentUser.orgId),
   ]);
+  const transactionModes = await ensureDefaultTransactionModesForUser(currentUser.id);
   const visibleExpenses =
     currentUser.role === "ADMIN"
       ? expenses
@@ -185,6 +190,7 @@ export async function getTransfersDashboardData(): Promise<TransferDashboardData
     organization: toOrganizationDto(organization),
     categories,
     counterparties,
+    transactionModes,
     expenses: visibleTransfers,
     currentUser: {
       id: currentUser.id,
@@ -200,14 +206,13 @@ export async function createExpenseAction(
 ): Promise<FinanceActionState> {
   const currentUser = await requireUser();
   const orgId = assertOrgId(currentUser);
+  await ensureDefaultTransactionModesForUser(currentUser.id);
 
   const parsed = expenseSchema.safeParse({
     categoryId: formData.get("categoryId"),
     counterPartyId: formData.get("counterPartyId"),
-    transferStatus: formData.get("transferStatus"),
+    transactionModeId: formData.get("transactionModeId"),
     amount: formData.get("amount"),
-    type: normalizeField(formData.get("type")) ?? "expense",
-    transactionMode: normalizeField(formData.get("transactionMode")) ?? "online",
     scope: normalizeField(formData.get("scope")) ?? "personal",
     necessityScore: formData.get("necessityScore"),
     note: normalizeField(formData.get("note")) ?? null,
@@ -228,18 +233,23 @@ export async function createExpenseAction(
     return { error: "Counterparty does not belong to your organization" };
   }
 
+  const transactionMode = await getTransactionModeById(parsed.data.transactionModeId);
+  if (!transactionMode || transactionMode.userId !== currentUser.id) {
+    return { error: "Transaction mode does not exist" };
+  }
+
   const expenseType = category.type;
-  const transferStatus = counterPartyId ? parsed.data.transferStatus ?? "open" : null;
+  const transferStatus = counterPartyId ? "open" : null;
 
   await createExpenseRecord({
     orgId,
     userId: currentUser.id,
     categoryId: parsed.data.categoryId,
     counterPartyId,
+    transactionModeId: transactionMode.id,
     transferStatus,
     amount: toMoneyString(parsed.data.amount),
     type: expenseType,
-    transactionMode: parsed.data.transactionMode,
     scope: parsed.data.scope,
     necessityScore: parsed.data.necessityScore,
     note: parsed.data.note,
@@ -255,13 +265,13 @@ export async function updateExpenseAction(
 ): Promise<FinanceActionState> {
   const currentUser = await requireUser();
   const orgId = assertOrgId(currentUser);
+  await ensureDefaultTransactionModesForUser(currentUser.id);
 
   const parsed = expenseSchema.safeParse({
     categoryId: formData.get("categoryId"),
     counterPartyId: formData.get("counterPartyId"),
-    transferStatus: formData.get("transferStatus"),
+    transactionModeId: formData.get("transactionModeId"),
     amount: formData.get("amount"),
-    transactionMode: normalizeField(formData.get("transactionMode")) ?? "online",
     scope: normalizeField(formData.get("scope")) ?? "personal",
     necessityScore: formData.get("necessityScore"),
     note: normalizeField(formData.get("note")) ?? null,
@@ -294,16 +304,21 @@ export async function updateExpenseAction(
     return { error: "Counterparty does not belong to your organization" };
   }
 
+  const transactionMode = await getTransactionModeById(parsed.data.transactionModeId);
+  if (!transactionMode || transactionMode.userId !== currentUser.id) {
+    return { error: "Transaction mode does not exist" };
+  }
+
   const expenseType = category.type;
-  const transferStatus = counterPartyId ? parsed.data.transferStatus ?? "open" : null;
+  const transferStatus = counterPartyId ? expense.transferStatus ?? "open" : null;
 
   await updateExpenseRecord(expense.id, {
     categoryId: parsed.data.categoryId,
     counterPartyId,
+    transactionModeId: transactionMode.id,
     transferStatus,
     amount: toMoneyString(parsed.data.amount),
     type: expenseType,
-    transactionMode: parsed.data.transactionMode,
     scope: parsed.data.scope,
     necessityScore: parsed.data.necessityScore,
     note: parsed.data.note,

@@ -151,7 +151,6 @@ export async function acceptOrganizationInvite(inviteCode: string) {
   }
 
   await updateUserById(currentUser.id, { orgId: organization.id });
-  revalidatePath(ROUTES.DASHBOARD, "layout");
 
   return {
     success: true,

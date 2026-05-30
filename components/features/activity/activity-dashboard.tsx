@@ -285,53 +285,6 @@ function SectionHeader({
   );
 }
 
-function MultiChipFilter({
-  label,
-  options,
-  selectedValues,
-  onChange,
-}: {
-  label: string;
-  options: { value: string; label: string }[];
-  selectedValues: string[];
-  onChange: (nextValues: string[]) => void;
-}) {
-  const isAllSelected = selectedValues.length === 0;
-
-  function toggleValue(value: string) {
-    if (value === "all") {
-      onChange([]);
-      return;
-    }
-
-    const nextValues = selectedValues.includes(value)
-      ? selectedValues.filter((currentValue) => currentValue !== value)
-      : [...selectedValues, value];
-
-    onChange(nextValues);
-  }
-
-  return (
-    <div className="space-y-3">
-      <Label>{label}</Label>
-      <div className="flex flex-wrap gap-2">
-        <FilterChip active={isAllSelected} onClick={() => toggleValue("all")}>
-          All
-        </FilterChip>
-        {options.map((option) => (
-          <FilterChip
-            key={option.value}
-            active={selectedValues.includes(option.value)}
-            onClick={() => toggleValue(option.value)}
-          >
-            {option.label}
-          </FilterChip>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function CategoryGroupFilter({
   categories,
   selectedValues,

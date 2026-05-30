@@ -9,6 +9,7 @@ export const ROUTES = {
   USERS: "/users",
   CATEGORIES: "/categories",
   COUNTERPARTIES: "/counterparties",
+  TRANSACTION_MODES: "/transaction-modes",
   BUDGETS: "/budgets",
   EXPENSES: "/expenses",
   TRANSFERS: "/transfers",
