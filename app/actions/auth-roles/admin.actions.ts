@@ -45,7 +45,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   return {
     organization,
     members,
-    inviteLink: organization ? getOrganizationInviteLink(organization.inviteCode) : null,
+    inviteLink: organization ? await getOrganizationInviteLink(organization.inviteCode) : null,
   };
 }
 
