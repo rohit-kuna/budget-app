@@ -445,7 +445,6 @@ function ExpenseTable({
 }) {
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [ownerFilter, setOwnerFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [transactionModeFilter, setTransactionModeFilter] = useState("all");
   const [scopeFilter, setScopeFilter] = useState("all");
@@ -459,19 +458,6 @@ function ExpenseTable({
       ...Array.from(new Map(expenses.map((expense) => [expense.categoryId, expense.categoryName])).entries()).map(
         ([id, name]) => ({
           value: String(id),
-          label: name,
-        })
-      ),
-    ],
-    [expenses]
-  );
-
-  const ownerOptions = useMemo(
-    () => [
-      { value: "all", label: "All users" },
-      ...Array.from(new Map(expenses.map((expense) => [expense.userId, expense.userName])).entries()).map(
-        ([id, name]) => ({
-          value: id,
           label: name,
         })
       ),
@@ -495,7 +481,6 @@ function ExpenseTable({
 
     return expenses.filter((expense) => {
       if (categoryFilter !== "all" && String(expense.categoryId) !== categoryFilter) return false;
-      if (ownerFilter !== "all" && expense.userId !== ownerFilter) return false;
       if (typeFilter !== "all" && expense.type !== typeFilter) return false;
       if (transactionModeFilter !== "all" && String(expense.transactionModeId) !== transactionModeFilter) return false;
       if (scopeFilter !== "all" && expense.scope !== scopeFilter) return false;
@@ -506,10 +491,8 @@ function ExpenseTable({
 
       return [
         expense.categoryName,
-        expense.userName,
         expense.counterPartyName ?? "",
         expense.transactionModeName ?? "",
-        expense.transactionModeOwnerName ?? "",
         expense.note ?? "",
         expense.amount,
         expense.type,
@@ -521,7 +504,6 @@ function ExpenseTable({
   }, [
     expenses,
     categoryFilter,
-    ownerFilter,
     typeFilter,
     transactionModeFilter,
     scopeFilter,
@@ -536,11 +518,6 @@ function ExpenseTable({
         accessorKey: "categoryName",
         header: ({ column }) => <SortableHeader column={column} title="Category" />,
         cell: ({ row }) => <span className="font-medium">{row.original.categoryName}</span>,
-      },
-      {
-        accessorKey: "userName",
-        header: ({ column }) => <SortableHeader column={column} title="Added by" />,
-        cell: ({ row }) => row.original.userName,
       },
       {
         accessorKey: "counterPartyName",
@@ -561,14 +538,7 @@ function ExpenseTable({
       {
         accessorKey: "transactionModeName",
         header: ({ column }) => <SortableHeader column={column} title="Transaction mode" />,
-        cell: ({ row }) => (
-          <div className="space-y-1">
-            <Badge variant="outline">{row.original.transactionModeName ?? "—"}</Badge>
-            {row.original.transactionModeOwnerName ? (
-              <p className="text-xs text-muted-foreground">{row.original.transactionModeOwnerName}</p>
-            ) : null}
-          </div>
-        ),
+        cell: ({ row }) => <Badge variant="outline">{row.original.transactionModeName ?? "—"}</Badge>,
       },
       {
         accessorKey: "scope",
@@ -651,16 +621,12 @@ function ExpenseTable({
               id="expense-search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by note, category, user, type..."
+              placeholder="Search by note, category, type..."
             />
           </div>
           <div className="space-y-2">
             <Label>Category</Label>
             <FilterSelect value={categoryFilter} onChange={setCategoryFilter} options={categoryOptions} />
-          </div>
-          <div className="space-y-2">
-            <Label>Added by</Label>
-            <FilterSelect value={ownerFilter} onChange={setOwnerFilter} options={ownerOptions} />
           </div>
           <div className="space-y-2">
             <Label>Type</Label>
@@ -718,7 +684,6 @@ function ExpenseTable({
               size="sm"
               onClick={() => {
                 setCategoryFilter("all");
-                setOwnerFilter("all");
                 setTypeFilter("all");
                 setTransactionModeFilter("all");
                 setScopeFilter("all");

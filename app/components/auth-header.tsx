@@ -1,16 +1,11 @@
-"use client";
-
-import { SignOutButton, useClerk, useUser } from "@clerk/nextjs";
-import { useMemo } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { SignOutButton } from "@clerk/nextjs";
 import { ROUTES } from "@/app/lib/constants";
 import { ROLES, type AppRole } from "@/app/lib/roles";
 import { AppLogo } from "@/app/components/app-logo";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Spinner } from "@/components/ui/spinner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import {
   NavigationMenu,
@@ -31,91 +26,57 @@ type AuthHeaderProps = {
   role: AppRole;
   hasOrganization: boolean;
   organizationName?: string | null;
+  displayName: string;
+  initials: string;
 };
 
 type HeaderNavItem = {
   label: string;
   href: string;
-  match?: "exact" | "prefix";
 };
 
 const adminNavItems: HeaderNavItem[] = [
-  { label: "Dashboard", href: ROUTES.DASHBOARD, match: "exact" },
-  { label: "Activity", href: ROUTES.ACTIVITY, match: "prefix" },
-  { label: "Organization", href: ROUTES.ORGANIZATION, match: "prefix" },
-  { label: "Users", href: ROUTES.USERS, match: "prefix" },
-  { label: "Categories", href: ROUTES.CATEGORIES, match: "prefix" },
-  { label: "Budgets", href: ROUTES.BUDGETS, match: "prefix" },
-  { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
-  { label: "Transfers", href: ROUTES.TRANSFERS, match: "prefix" },
-  { label: "Counterparties", href: ROUTES.COUNTERPARTIES, match: "prefix" },
-  { label: "Modes", href: ROUTES.TRANSACTION_MODES, match: "prefix" },
+  { label: "Dashboard", href: ROUTES.DASHBOARD },
+  { label: "Activity", href: ROUTES.ACTIVITY },
+  { label: "Organization", href: ROUTES.ORGANIZATION },
+  { label: "Users", href: ROUTES.USERS },
+  { label: "Categories", href: ROUTES.CATEGORIES },
+  { label: "Budgets", href: ROUTES.BUDGETS },
+  { label: "Expenses", href: ROUTES.EXPENSES },
+  { label: "Transfers", href: ROUTES.TRANSFERS },
+  { label: "Counterparties", href: ROUTES.COUNTERPARTIES },
+  { label: "Modes", href: ROUTES.TRANSACTION_MODES },
 ];
 
 const userNavItems: HeaderNavItem[] = [
-  { label: "Dashboard", href: ROUTES.DASHBOARD, match: "exact" },
-  { label: "Activity", href: ROUTES.ACTIVITY, match: "prefix" },
-  { label: "Budgets", href: ROUTES.BUDGETS, match: "prefix" },
-  { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
-  { label: "Transfers", href: ROUTES.TRANSFERS, match: "prefix" },
-  { label: "Counterparties", href: ROUTES.COUNTERPARTIES, match: "prefix" },
-  { label: "Modes", href: ROUTES.TRANSACTION_MODES, match: "prefix" },
+  { label: "Dashboard", href: ROUTES.DASHBOARD },
+  { label: "Activity", href: ROUTES.ACTIVITY },
+  { label: "Budgets", href: ROUTES.BUDGETS },
+  { label: "Expenses", href: ROUTES.EXPENSES },
+  { label: "Transfers", href: ROUTES.TRANSFERS },
+  { label: "Counterparties", href: ROUTES.COUNTERPARTIES },
+  { label: "Modes", href: ROUTES.TRANSACTION_MODES },
 ];
 
 const dashboardNavItem: HeaderNavItem = {
   label: "Dashboard",
   href: ROUTES.DASHBOARD,
-  match: "exact",
 };
 
-export function AuthHeader({ role, hasOrganization, organizationName }: AuthHeaderProps) {
-  const { openUserProfile } = useClerk();
-  const { user, isLoaded } = useUser();
-  const pathname = usePathname();
+function getNavItems(role: AppRole, hasOrganization: boolean) {
+  if (!hasOrganization) return [dashboardNavItem];
+  return role === ROLES.ADMIN ? adminNavItems : userNavItems;
+}
 
-  const navItems =
-    role === ROLES.ADMIN
-      ? hasOrganization
-        ? adminNavItems
-        : [dashboardNavItem]
-      : hasOrganization
-        ? userNavItems
-        : [dashboardNavItem];
-
+export function AuthHeader({
+  role,
+  hasOrganization,
+  organizationName,
+  displayName,
+  initials,
+}: AuthHeaderProps) {
+  const navItems = getNavItems(role, hasOrganization);
   const logoHref = ROUTES.DASHBOARD;
-
-  const displayName = useMemo(() => {
-    if (!isLoaded) return "Loading";
-    if (!user) return "User";
-    return (
-      user.fullName ??
-      user.firstName ??
-      user.username ??
-      user.primaryEmailAddress?.emailAddress?.split("@")[0] ??
-      "User"
-    );
-  }, [isLoaded, user]);
-
-  const initials = useMemo(() => {
-    const cleaned = displayName.trim();
-    if (!cleaned) return "U";
-    const parts = cleaned.split(/\s+/).filter(Boolean);
-    if (parts.length === 1) {
-      return parts[0].slice(0, 2).toUpperCase();
-    }
-    return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
-  }, [displayName]);
-
-  function isNavItemActive(item: HeaderNavItem) {
-    const { href, match = "exact" } = item;
-    if (href === "#") return false;
-
-    if (match === "prefix") {
-      return pathname === href || pathname.startsWith(`${href}/`);
-    }
-
-    return pathname === href;
-  }
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
@@ -127,13 +88,7 @@ export function AuthHeader({ role, hasOrganization, organizationName }: AuthHead
               <NavigationMenuList className="justify-start">
                 {navItems.map((item) => (
                   <NavigationMenuItem key={item.label}>
-                    <NavigationMenuLink
-                      asChild
-                      className={cn(
-                        navigationMenuTriggerStyle(),
-                        isNavItemActive(item) && "bg-accent/50 text-accent-foreground"
-                      )}
-                    >
+                    <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle())}>
                       <Link href={item.href}>{item.label}</Link>
                     </NavigationMenuLink>
                   </NavigationMenuItem>
@@ -152,67 +107,29 @@ export function AuthHeader({ role, hasOrganization, organizationName }: AuthHead
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link href={ROUTES.DASHBOARD}>Dashboard</Link>
-                </DropdownMenuItem>
-                {hasOrganization ? (
-                  <>
-                    <DropdownMenuItem asChild>
-                      <Link href={ROUTES.ACTIVITY}>Activity</Link>
-                    </DropdownMenuItem>
-                    {role === ROLES.ADMIN ? (
-                      <>
-                        <DropdownMenuItem asChild>
-                          <Link href={ROUTES.ORGANIZATION}>Organization</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={ROUTES.USERS}>Users</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={ROUTES.CATEGORIES}>Categories</Link>
-                        </DropdownMenuItem>
-                      </>
-                    ) : null}
-                    <DropdownMenuItem asChild>
-                      <Link href={ROUTES.BUDGETS}>Budgets</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={ROUTES.EXPENSES}>Expenses</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={ROUTES.TRANSFERS}>Transfers</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={ROUTES.COUNTERPARTIES}>Counterparties</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={ROUTES.TRANSACTION_MODES}>Transaction modes</Link>
-                    </DropdownMenuItem>
-                  </>
-                ) : null}
+                {navItems.map((item) => (
+                  <DropdownMenuItem key={item.label} asChild>
+                    <Link href={item.href}>{item.label}</Link>
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : null}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="max-w-40 justify-start gap-2 sm:max-w-56">
-                {isLoaded ? (
-                  <Avatar size="sm">
-                    <AvatarImage src={user?.imageUrl} alt={displayName} />
-                    <AvatarFallback>{initials}</AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <Spinner className="size-4" />
-                )}
+                <Avatar size="sm">
+                  <AvatarFallback>{initials}</AvatarFallback>
+                </Avatar>
                 <span className="truncate text-sm">{displayName}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={ROUTES.DASHBOARD}>Dashboard</Link>
-              </DropdownMenuItem>
               {hasOrganization ? (
                 <>
+                  <DropdownMenuItem asChild>
+                    <Link href={ROUTES.DASHBOARD}>Dashboard</Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href={ROUTES.ACTIVITY}>Activity</Link>
                   </DropdownMenuItem>
@@ -249,9 +166,6 @@ export function AuthHeader({ role, hasOrganization, organizationName }: AuthHead
               ) : (
                 <DropdownMenuSeparator />
               )}
-              <DropdownMenuItem onSelect={() => openUserProfile()}>
-                Profile settings
-              </DropdownMenuItem>
               <SignOutButton redirectUrl={ROUTES.HOME}>
                 <DropdownMenuItem>Logout</DropdownMenuItem>
               </SignOutButton>

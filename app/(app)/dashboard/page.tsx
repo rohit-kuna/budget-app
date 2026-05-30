@@ -14,6 +14,10 @@ type DashboardMenuItem = {
   description: string;
 };
 
+function getDisplayName(name?: string | null, email?: string | null) {
+  return name?.trim() || email?.trim() || "User";
+}
+
 const adminMenuItems: DashboardMenuItem[] = [
   {
     label: "Organization",
@@ -94,15 +98,14 @@ export default async function DashboardPage() {
 
   const organization = await getOrganizationById(user.orgId);
   const menuItems = user.role === ROLES.ADMIN ? adminMenuItems : userMenuItems;
+  const displayName = getDisplayName(user.name, user.email);
 
   return (
     <main className="mx-auto w-full max-w-7xl p-4 sm:p-6">
       <section className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <Card className="py-2">
           <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
-            <CardTitle className="text-3xl tracking-tight">
-              Welcome back{organization ? `, ${organization.name}` : ""}
-            </CardTitle>
+            <CardTitle className="text-3xl tracking-tight">Welcome back, {displayName}</CardTitle>
             <CardDescription>
               Your workspace is ready. Use the dashboard menu to jump into the right area.
             </CardDescription>

@@ -14,12 +14,17 @@ import {
   getOrganizationByInviteCode,
   getOrganizationMembers,
   updateOrganizationInviteCode,
+  updateOrganizationName,
 } from "@/app/actions/tables/organizations.table.actions";
 import type { AdminDashboardData } from "@/app/lib/admin-dashboard.types";
 import { buildInviteCode } from "@/app/lib/invite-code";
 import { getOrganizationInviteLink } from "@/app/lib/urls";
 
 const createOrganizationSchema = z.object({
+  name: z.string().trim().min(2, "Organization name is required").max(120),
+});
+
+const updateOrganizationNameSchema = z.object({
   name: z.string().trim().min(2, "Organization name is required").max(120),
 });
 
@@ -93,6 +98,31 @@ export async function regenerateOrganizationInviteAction() {
   if (!organization) {
     throw new Error("Unable to regenerate the invite link");
   }
+}
+
+export async function updateOrganizationNameAction(formData: FormData) {
+  const currentUser = await requireAdmin();
+
+  if (!currentUser.orgId) {
+    throw new Error("Create an organization first");
+  }
+
+  const parsed = updateOrganizationNameSchema.safeParse({
+    name: formData.get("name"),
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Unable to update organization name");
+  }
+
+  const organization = await updateOrganizationName(currentUser.orgId, parsed.data.name);
+
+  if (!organization) {
+    throw new Error("Unable to update organization name");
+  }
+
+  revalidatePath(ROUTES.ORGANIZATION, "page");
+  revalidatePath(ROUTES.DASHBOARD, "layout");
 }
 
 export async function updateOrganizationMemberRoleAction(formData: FormData) {

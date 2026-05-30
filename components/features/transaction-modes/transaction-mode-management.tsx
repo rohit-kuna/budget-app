@@ -46,7 +46,6 @@ function TransactionModeRow({ transactionMode }: { transactionMode: TransactionM
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <p className="font-medium">{transactionMode.name}</p>
-          <p className="text-xs text-muted-foreground">Owned by you</p>
         </div>
         {transactionMode.isDefault ? <Badge>Default</Badge> : null}
       </div>

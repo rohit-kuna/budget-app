@@ -5,6 +5,22 @@ import { redirect } from "next/navigation";
 import { ROLES } from "@/app/lib/roles";
 import { getOrganizationById } from "@/app/actions/tables/organizations.table.actions";
 
+function getDisplayName(name?: string | null, email?: string | null) {
+  return name?.trim() || email?.trim() || "User";
+}
+
+function getInitials(displayName: string) {
+  const cleaned = displayName.trim();
+  if (!cleaned) return "U";
+
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+}
+
 export default async function ApplicationLayout({
   children,
 }: {
@@ -13,6 +29,7 @@ export default async function ApplicationLayout({
   const user = await getCurrentDbUser();
   if (!user) redirect(ROUTES.SIGN_IN);
   const organization = user.orgId ? await getOrganizationById(user.orgId) : null;
+  const displayName = getDisplayName(user.name, user.email);
 
   return (
     <>
@@ -20,6 +37,8 @@ export default async function ApplicationLayout({
         role={user.role ?? ROLES.USER}
         hasOrganization={Boolean(user.orgId)}
         organizationName={organization?.name ?? null}
+        displayName={displayName}
+        initials={getInitials(displayName)}
       />
       {children}
     </>

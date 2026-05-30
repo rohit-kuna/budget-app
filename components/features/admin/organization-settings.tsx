@@ -1,10 +1,14 @@
 import Link from "next/link";
+import { updateOrganizationNameAction } from "@/app/actions/auth-roles/admin.actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CopyInviteLinkButton } from "@/components/features/admin/copy-invite-link-button";
-import { createOrganizationAction, regenerateOrganizationInviteAction } from "@/app/actions/auth-roles/admin.actions";
+import {
+  createOrganizationAction,
+  regenerateOrganizationInviteAction,
+} from "@/app/actions/auth-roles/admin.actions";
 import type { AdminDashboardData } from "@/app/lib/admin-dashboard.types";
 import { ROUTES } from "@/app/lib/constants";
 
@@ -23,16 +27,30 @@ export function OrganizationSettings({ data }: OrganizationSettingsProps) {
         </CardHeader>
         <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
           {data.organization ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Your organization is ready. Use the invite link below to add new members.
               </p>
-              <div className="rounded-lg border bg-muted/30 p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Organization name
+              <form action={updateOrganizationNameAction} className="space-y-3 rounded-lg border bg-muted/20 p-4">
+                <div className="space-y-2">
+                  <Label htmlFor="organizationName">Organization name</Label>
+                  <Input
+                    id="organizationName"
+                    name="name"
+                    defaultValue={data.organization.name}
+                    autoComplete="organization"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button type="submit" className="w-full sm:w-auto">
+                    Save name
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This updates the workspace title shown in the header and dashboard.
                 </p>
-                <p className="mt-1 text-lg font-semibold">{data.organization.name}</p>
-              </div>
+              </form>
             </div>
           ) : (
             <form action={createOrganizationAction} className="space-y-4">

@@ -1,6 +1,7 @@
 "use server";
 
 import { desc, eq } from "drizzle-orm";
+import { cache } from "react";
 import type { OrganizationMemberRecord, OrganizationRecord } from "@/app/lib/admin-dashboard.types";
 import { db } from "@/db";
 import { organizations, users } from "@/db/schema";
@@ -19,7 +20,7 @@ export async function createOrganizationRecord(input: {
   return organization ?? null;
 }
 
-export async function getOrganizationById(id: number): Promise<OrganizationRecord | null> {
+export const getOrganizationById = cache(async (id: number): Promise<OrganizationRecord | null> => {
   const [organization] = await db
     .select()
     .from(organizations)
@@ -27,7 +28,7 @@ export async function getOrganizationById(id: number): Promise<OrganizationRecor
     .limit(1);
 
   return organization ?? null;
-}
+});
 
 export async function getOrganizationByInviteCode(
   inviteCode: string
@@ -45,6 +46,16 @@ export async function updateOrganizationInviteCode(id: number, inviteCode: strin
   const [organization] = await db
     .update(organizations)
     .set({ inviteCode, updatedAt: new Date() })
+    .where(eq(organizations.id, id))
+    .returning();
+
+  return organization ?? null;
+}
+
+export async function updateOrganizationName(id: number, name: string) {
+  const [organization] = await db
+    .update(organizations)
+    .set({ name, updatedAt: new Date() })
     .where(eq(organizations.id, id))
     .returning();
 
