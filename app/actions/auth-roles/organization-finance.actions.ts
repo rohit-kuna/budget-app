@@ -20,6 +20,7 @@ import {
   getBudgetById,
   updateBudgetRecord,
 } from "@/app/actions/tables/budgets.table.actions";
+import { getCounterpartiesByOrg } from "@/app/actions/tables/counterparties.table.actions";
 import { getOrganizationMembers } from "@/app/actions/tables/organizations.table.actions";
 import { buildBudgetAllocationSummaries } from "@/app/lib/budget-utils";
 import { getBudgetMonthBounds, isValidBudgetMonth } from "@/app/lib/budget-month";
@@ -82,6 +83,7 @@ export async function getOrganizationFinanceData(): Promise<OrganizationFinanceD
     return {
       organization: null,
       categories: [],
+      counterparties: [],
       members: [],
       budgets: [],
       allocationSummaries: [],
@@ -93,9 +95,10 @@ export async function getOrganizationFinanceData(): Promise<OrganizationFinanceD
     };
   }
 
-  const [organization, categories, budgets, members] = await Promise.all([
+  const [organization, categories, counterparties, budgets, members] = await Promise.all([
     getOrganizationById(currentUser.orgId),
     getCategoriesByOrg(currentUser.orgId),
+    getCounterpartiesByOrg(currentUser.orgId),
     getBudgetsByOrg(currentUser.orgId),
     getOrganizationMembers(currentUser.orgId),
   ]);
@@ -107,6 +110,7 @@ export async function getOrganizationFinanceData(): Promise<OrganizationFinanceD
   return {
     organization: toOrganizationDto(organization),
     categories,
+    counterparties,
     members: members.map((member) => ({
       id: member.id,
       email: member.email,

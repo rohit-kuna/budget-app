@@ -2,15 +2,16 @@
 
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { categories, expenses, users } from "@/db/schema";
+import { categories, counterParty, expenses, users } from "@/db/schema";
 import type { ExpenseRecordDto } from "@/app/lib/expense.types";
-import type { ExpenseMode, ExpenseScope, ExpenseType } from "@/db/schema";
+import type { ExpenseMode, ExpenseScope, ExpenseType, TransferStatus } from "@/db/schema";
 
 function toExpenseDto(
   record: typeof expenses.$inferSelect & {
     categoryName: string;
     userName: string;
     userEmail: string;
+    counterPartyName: string | null;
   }
 ): ExpenseRecordDto {
   return {
@@ -21,10 +22,13 @@ function toExpenseDto(
     userEmail: record.userEmail,
     categoryId: record.categoryId,
     categoryName: record.categoryName,
+    counterPartyId: record.counterPartyId,
+    counterPartyName: record.counterPartyName,
     amount: record.amount.toString(),
     type: record.type as ExpenseType,
     transactionMode: record.transactionMode as ExpenseMode,
     scope: record.scope as ExpenseScope,
+    transferStatus: (record.transferStatus as TransferStatus | null) ?? null,
     necessityScore: Number(record.necessityScore),
     note: record.note,
     occurredAt: record.occurredAt.toISOString(),
@@ -33,29 +37,37 @@ function toExpenseDto(
   };
 }
 
+function expenseSelectShape() {
+  return {
+    id: expenses.id,
+    orgId: expenses.orgId,
+    userId: expenses.userId,
+    userName: users.name,
+    userEmail: users.email,
+    categoryId: expenses.categoryId,
+    categoryName: categories.name,
+    counterPartyId: expenses.counterPartyId,
+    counterPartyName: counterParty.name,
+    amount: expenses.amount,
+    type: expenses.type,
+    transactionMode: expenses.transactionMode,
+    scope: expenses.scope,
+    transferStatus: expenses.transferStatus,
+    necessityScore: expenses.necessityScore,
+    note: expenses.note,
+    occurredAt: expenses.occurredAt,
+    createdAt: expenses.createdAt,
+    updatedAt: expenses.updatedAt,
+  } as const;
+}
+
 export async function getExpensesByOrg(orgId: number): Promise<ExpenseRecordDto[]> {
   const records = await db
-    .select({
-      id: expenses.id,
-      orgId: expenses.orgId,
-      userId: expenses.userId,
-      userName: users.name,
-      userEmail: users.email,
-      categoryId: expenses.categoryId,
-      categoryName: categories.name,
-      amount: expenses.amount,
-      type: expenses.type,
-      transactionMode: expenses.transactionMode,
-      scope: expenses.scope,
-      necessityScore: expenses.necessityScore,
-      note: expenses.note,
-      occurredAt: expenses.occurredAt,
-      createdAt: expenses.createdAt,
-      updatedAt: expenses.updatedAt,
-    })
+    .select(expenseSelectShape())
     .from(expenses)
     .innerJoin(categories, eq(categories.id, expenses.categoryId))
     .innerJoin(users, eq(users.id, expenses.userId))
+    .leftJoin(counterParty, eq(counterParty.id, expenses.counterPartyId))
     .where(eq(expenses.orgId, orgId))
     .orderBy(desc(expenses.occurredAt), desc(expenses.createdAt));
 
@@ -64,27 +76,11 @@ export async function getExpensesByOrg(orgId: number): Promise<ExpenseRecordDto[
 
 export async function getExpenseById(id: number): Promise<ExpenseRecordDto | null> {
   const [record] = await db
-    .select({
-      id: expenses.id,
-      orgId: expenses.orgId,
-      userId: expenses.userId,
-      userName: users.name,
-      userEmail: users.email,
-      categoryId: expenses.categoryId,
-      categoryName: categories.name,
-      amount: expenses.amount,
-      type: expenses.type,
-      transactionMode: expenses.transactionMode,
-      scope: expenses.scope,
-      necessityScore: expenses.necessityScore,
-      note: expenses.note,
-      occurredAt: expenses.occurredAt,
-      createdAt: expenses.createdAt,
-      updatedAt: expenses.updatedAt,
-    })
+    .select(expenseSelectShape())
     .from(expenses)
     .innerJoin(categories, eq(categories.id, expenses.categoryId))
     .innerJoin(users, eq(users.id, expenses.userId))
+    .leftJoin(counterParty, eq(counterParty.id, expenses.counterPartyId))
     .where(eq(expenses.id, id))
     .limit(1);
 
@@ -95,6 +91,8 @@ export async function createExpenseRecord(input: {
   orgId: number;
   userId: string;
   categoryId: number;
+  counterPartyId: number | null;
+  transferStatus: TransferStatus | null;
   amount: string;
   type: ExpenseType;
   transactionMode: ExpenseMode;
@@ -111,6 +109,8 @@ export async function updateExpenseRecord(
   id: number,
   input: Partial<{
     categoryId: number;
+    counterPartyId: number | null;
+    transferStatus: TransferStatus | null;
     amount: string;
     type: ExpenseType;
     transactionMode: ExpenseMode;

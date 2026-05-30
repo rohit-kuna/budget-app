@@ -1,4 +1,4 @@
-import type { CategoryRecordDto } from "@/app/lib/finance.types";
+import type { CategoryRecordDto, CounterpartyRecordDto } from "@/app/lib/finance.types";
 
 export type ExpenseRecordDto = {
   id: number;
@@ -8,15 +8,37 @@ export type ExpenseRecordDto = {
   userEmail: string;
   categoryId: number;
   categoryName: string;
+  counterPartyId: number | null;
+  counterPartyName: string | null;
   amount: string;
   type: "expense" | "income";
   transactionMode: "online" | "cash";
   scope: "personal" | "family";
+  transferStatus: "open" | "settled" | "closed" | null;
   necessityScore: number;
   note: string | null;
   occurredAt: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type TransferDashboardDataDto = {
+  organization: {
+    id: number;
+    name: string;
+    inviteCode: string;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
+  categories: CategoryRecordDto[];
+  counterparties: CounterpartyRecordDto[];
+  expenses: ExpenseRecordDto[];
+  currentUser: {
+    id: string;
+    role: "ADMIN" | "USER";
+    orgId: number | null;
+  };
 };
 
 export type ExpensesDashboardDataDto = {
@@ -29,6 +51,7 @@ export type ExpensesDashboardDataDto = {
     updatedAt: string;
   } | null;
   categories: CategoryRecordDto[];
+  counterparties: CounterpartyRecordDto[];
   expenses: ExpenseRecordDto[];
   currentUser: {
     id: string;

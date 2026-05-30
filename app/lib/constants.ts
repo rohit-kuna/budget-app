@@ -8,8 +8,10 @@ export const ROUTES = {
   ORGANIZATION: "/organization",
   USERS: "/users",
   CATEGORIES: "/categories",
+  COUNTERPARTIES: "/counterparties",
   BUDGETS: "/budgets",
   EXPENSES: "/expenses",
+  TRANSFERS: "/transfers",
   SERVICE_UNAVAILABLE: "/service-unavailable",
 } as const;
 

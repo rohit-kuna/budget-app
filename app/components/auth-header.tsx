@@ -47,6 +47,8 @@ const adminNavItems: HeaderNavItem[] = [
   { label: "Categories", href: ROUTES.CATEGORIES, match: "prefix" },
   { label: "Budgets", href: ROUTES.BUDGETS, match: "prefix" },
   { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
+  { label: "Transfers", href: ROUTES.TRANSFERS, match: "prefix" },
+  { label: "Counterparties", href: ROUTES.COUNTERPARTIES, match: "prefix" },
 ];
 
 const userNavItems: HeaderNavItem[] = [
@@ -54,6 +56,8 @@ const userNavItems: HeaderNavItem[] = [
   { label: "Activity", href: ROUTES.ACTIVITY, match: "prefix" },
   { label: "Budgets", href: ROUTES.BUDGETS, match: "prefix" },
   { label: "Expenses", href: ROUTES.EXPENSES, match: "prefix" },
+  { label: "Transfers", href: ROUTES.TRANSFERS, match: "prefix" },
+  { label: "Counterparties", href: ROUTES.COUNTERPARTIES, match: "prefix" },
 ];
 
 const dashboardNavItem: HeaderNavItem = {
@@ -173,6 +177,12 @@ export function AuthHeader({ role, hasOrganization, organizationName }: AuthHead
                     <DropdownMenuItem asChild>
                       <Link href={ROUTES.EXPENSES}>Expenses</Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={ROUTES.TRANSFERS}>Transfers</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={ROUTES.COUNTERPARTIES}>Counterparties</Link>
+                    </DropdownMenuItem>
                   </>
                 ) : null}
               </DropdownMenuContent>
@@ -219,6 +229,12 @@ export function AuthHeader({ role, hasOrganization, organizationName }: AuthHead
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href={ROUTES.EXPENSES}>Expenses</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={ROUTES.TRANSFERS}>Transfers</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={ROUTES.COUNTERPARTIES}>Counterparties</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>

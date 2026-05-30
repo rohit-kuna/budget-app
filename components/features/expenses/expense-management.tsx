@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { flexRender, getCoreRowModel, getSortedRowModel, type Column, type ColumnDef, type SortingState, useReactTable } from "@tanstack/react-table";
 import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, PencilLine, Trash2, X } from "lucide-react";
 import { financeInitialState } from "@/app/actions/auth-roles/finance.types";
@@ -9,7 +9,7 @@ import {
   deleteExpenseAction,
   updateExpenseAction,
 } from "@/app/actions/auth-roles/expense.actions";
-import type { CategoryRecordDto } from "@/app/lib/finance.types";
+import type { CategoryRecordDto, CounterpartyRecordDto } from "@/app/lib/finance.types";
 import type { ExpenseRecordDto, ExpensesDashboardDataDto } from "@/app/lib/expense.types";
 import { getTodayExpenseDateInputValue, formatExpenseDate } from "@/app/lib/expense-date";
 import { Button } from "@/components/ui/button";
@@ -96,21 +96,31 @@ function CategorySelect({
 }
 
 function FormSelect({
+  id,
   name,
   defaultValue,
   options,
+  required = true,
+  includeEmptyOption,
 }: {
+  id?: string;
   name: string;
   defaultValue: string;
   options: readonly { value: string; label: string }[];
+  required?: boolean;
+  includeEmptyOption?: string;
 }) {
   return (
     <select
+      id={id}
       name={name}
       defaultValue={defaultValue}
       className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-      required
+      required={required}
     >
+      {includeEmptyOption ? (
+        <option value="">{includeEmptyOption}</option>
+      ) : null}
       {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
@@ -210,10 +220,12 @@ function SortableHeader({
 
 function ExpenseFormCard({
   categories,
+  counterparties,
   editingExpense,
   onCancelEdit,
 }: {
   categories: CategoryRecordDto[];
+  counterparties: CounterpartyRecordDto[];
   editingExpense: ExpenseRecordDto | null;
   onCancelEdit: () => void;
 }) {
@@ -236,14 +248,14 @@ function ExpenseFormCard({
   const [selectedCategoryId, setSelectedCategoryId] = useState(
     editingExpense?.categoryId ?? categories[0]?.id ?? 0
   );
-
-  useEffect(() => {
-    setSelectedCategoryId(editingExpense?.categoryId ?? categories[0]?.id ?? 0);
-  }, [editingExpense?.categoryId, categories]);
+  const resolvedSelectedCategoryId =
+    categories.some((category) => category.id === selectedCategoryId)
+      ? selectedCategoryId
+      : editingExpense?.categoryId ?? categories[0]?.id ?? 0;
 
   const selectedCategory = useMemo(
-    () => categories.find((category) => category.id === selectedCategoryId) ?? null,
-    [categories, selectedCategoryId]
+    () => categories.find((category) => category.id === resolvedSelectedCategoryId) ?? null,
+    [categories, resolvedSelectedCategoryId]
   );
 
   return (
@@ -269,7 +281,7 @@ function ExpenseFormCard({
               <Label>Category</Label>
               <CategorySelect
                 categories={categories}
-                value={selectedCategoryId}
+                value={resolvedSelectedCategoryId}
                 onChange={setSelectedCategoryId}
               />
             </div>
@@ -304,28 +316,45 @@ function ExpenseFormCard({
                 options={expenseModes}
               />
             </div>
+            <div className="space-y-2">
+              <Label>Scope</Label>
+              <FormSelect
+                name="scope"
+                defaultValue={editingExpense?.scope ?? "personal"}
+                options={expenseScopes}
+              />
+            </div>
+            <div className="space-y-2">
+              <NecessityScoreSlider defaultValue={editingExpense?.necessityScore ?? 1} />
+            </div>
             <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Scope</Label>
-                <FormSelect
-                  name="scope"
-                  defaultValue={editingExpense?.scope ?? "personal"}
-                  options={expenseScopes}
+                <Label htmlFor="expense-date">Date</Label>
+                <Input
+                  id="expense-date"
+                  name="occurredAt"
+                  type="date"
+                  defaultValue={defaultOccurredAt}
+                  required
                 />
               </div>
               <div className="space-y-2">
-                <NecessityScoreSlider defaultValue={editingExpense?.necessityScore ?? 1} />
+                <Label htmlFor="expense-counterparty">Counterparty</Label>
+              <FormSelect
+                id="expense-counterparty"
+                name="counterPartyId"
+                defaultValue={editingExpense?.counterPartyId ? String(editingExpense.counterPartyId) : ""}
+                options={counterparties.map((counterparty) => ({
+                  value: String(counterparty.id),
+                  label: counterparty.name,
+                  }))}
+                  required={false}
+                  includeEmptyOption="No counterparty"
+                />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="expense-date">Date</Label>
-              <Input
-                id="expense-date"
-                name="occurredAt"
-                type="date"
-                defaultValue={defaultOccurredAt}
-                required
-              />
+              <p className="text-sm text-muted-foreground sm:col-span-2">
+                Link any expense to a counterparty. This is available for all categories.
+              </p>
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="expense-note">Note</Label>
@@ -466,11 +495,13 @@ function ExpenseTable({
       return [
         expense.categoryName,
         expense.userName,
+        expense.counterPartyName ?? "",
         expense.note ?? "",
         expense.amount,
         expense.type,
         expense.transactionMode,
         expense.scope,
+        expense.transferStatus ?? "",
         String(expense.necessityScore),
       ].some((value) => value.toLowerCase().includes(loweredQuery));
     });
@@ -487,6 +518,11 @@ function ExpenseTable({
         accessorKey: "userName",
         header: ({ column }) => <SortableHeader column={column} title="Added by" />,
         cell: ({ row }) => row.original.userName,
+      },
+      {
+        accessorKey: "counterPartyName",
+        header: "Counterparty",
+        cell: ({ row }) => row.original.counterPartyName ?? "—",
       },
       {
         accessorKey: "amount",
@@ -508,6 +544,19 @@ function ExpenseTable({
         accessorKey: "scope",
         header: ({ column }) => <SortableHeader column={column} title="Scope" />,
         cell: ({ row }) => <Badge variant="outline">{row.original.scope}</Badge>,
+      },
+      {
+        accessorKey: "transferStatus",
+        header: ({ column }) => <SortableHeader column={column} title="Transfer status" />,
+        cell: ({ row }) => (
+          row.original.counterPartyId ? (
+            <Badge variant={row.original.transferStatus === "settled" ? "secondary" : "outline"}>
+              {row.original.transferStatus ?? "open"}
+            </Badge>
+          ) : (
+            "—"
+          )
+        ),
       },
       {
         accessorKey: "necessityScore",
@@ -561,7 +610,7 @@ function ExpenseTable({
           <div>
             <CardTitle className="text-2xl tracking-tight">Expenses</CardTitle>
             <p className="max-w-3xl text-sm text-muted-foreground">
-              Filter, sort, edit, and remove your expenses.
+              Filter, sort, edit, and remove your expenses, including optional counterparty links.
             </p>
           </div>
           <Badge variant="secondary">{filteredExpenses.length} records</Badge>
@@ -666,7 +715,7 @@ function ExpenseTable({
         </div>
 
         <div className="overflow-x-auto rounded-lg border">
-          <Table className="min-w-[1100px]">
+          <Table className="min-w-[1250px]">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
@@ -733,6 +782,7 @@ export function ExpenseManagement({
 
       <ExpenseFormCard
         categories={data.categories}
+        counterparties={data.counterparties}
         editingExpense={editingExpense}
         onCancelEdit={() => setEditingExpense(null)}
       />

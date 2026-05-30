@@ -13,12 +13,24 @@ import {
   getExpensesByOrg,
   updateExpenseRecord,
 } from "@/app/actions/tables/expenses.table.actions";
+import {
+  getCounterpartiesByOrg,
+  getCounterpartyById,
+} from "@/app/actions/tables/counterparties.table.actions";
 import type { FinanceActionState } from "@/app/actions/auth-roles/finance.types";
-import type { ExpensesDashboardDataDto } from "@/app/lib/expense.types";
+import type { ExpensesDashboardDataDto, TransferDashboardDataDto } from "@/app/lib/expense.types";
 import { parseExpenseDate } from "@/app/lib/expense-date";
 
 const expenseSchema = z.object({
   categoryId: z.coerce.number().int().positive(),
+  counterPartyId: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() ? value : undefined),
+    z.coerce.number().int().positive().optional()
+  ),
+  transferStatus: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() ? value : undefined),
+    z.enum(["open", "settled", "closed"]).optional()
+  ),
   amount: z.coerce.number().positive("Amount must be greater than zero"),
   transactionMode: z.enum(["online", "cash"]),
   scope: z.enum(["personal", "family"]),
@@ -29,6 +41,13 @@ const expenseSchema = z.object({
 
 const expenseIdSchema = z.object({
   expenseId: z.coerce.number().int().positive(),
+});
+
+const transferStatusSchema = z.enum(["open", "settled", "closed"]);
+
+const transferStatusUpdateSchema = z.object({
+  expenseId: z.coerce.number().int().positive(),
+  transferStatus: transferStatusSchema,
 });
 
 function assertOrgId(currentUser: Awaited<ReturnType<typeof requireUser>>) {
@@ -80,6 +99,19 @@ async function ensureExpenseOwnershipOrAdmin(expenseId: number, currentUser: Awa
   return expense;
 }
 
+async function resolveCounterpartyId(orgId: number, counterPartyId: number | null | undefined) {
+  if (counterPartyId == null) {
+    return null;
+  }
+
+  const counterparty = await getCounterpartyById(counterPartyId);
+  if (!counterparty || counterparty.orgId !== orgId) {
+    return null;
+  }
+
+  return counterparty.id;
+}
+
 export async function getExpensesDashboardData(): Promise<ExpensesDashboardDataDto> {
   const currentUser = await requireUser();
 
@@ -87,6 +119,7 @@ export async function getExpensesDashboardData(): Promise<ExpensesDashboardDataD
     return {
       organization: null,
       categories: [],
+      counterparties: [],
       expenses: [],
       currentUser: {
         id: currentUser.id,
@@ -96,17 +129,63 @@ export async function getExpensesDashboardData(): Promise<ExpensesDashboardDataD
     };
   }
 
-  const [organization, categories, expenses] = await Promise.all([
+  const [organization, categories, counterparties, expenses] = await Promise.all([
     getOrganizationById(currentUser.orgId),
     getCategoriesByOrg(currentUser.orgId),
+    getCounterpartiesByOrg(currentUser.orgId),
     getExpensesByOrg(currentUser.orgId),
   ]);
-  const visibleExpenses = expenses.filter((expense) => expense.userId === currentUser.id);
+  const visibleExpenses = expenses.filter(
+    (expense) => expense.scope === "family" || (expense.scope === "personal" && expense.userId === currentUser.id)
+  );
 
   return {
     organization: toOrganizationDto(organization),
     categories,
+    counterparties,
     expenses: visibleExpenses,
+    currentUser: {
+      id: currentUser.id,
+      role: currentUser.role,
+      orgId: currentUser.orgId,
+    },
+  };
+}
+
+export async function getTransfersDashboardData(): Promise<TransferDashboardDataDto> {
+  const currentUser = await requireUser();
+
+  if (!currentUser.orgId) {
+    return {
+      organization: null,
+      categories: [],
+      counterparties: [],
+      expenses: [],
+      currentUser: {
+        id: currentUser.id,
+        role: currentUser.role,
+        orgId: null,
+      },
+    };
+  }
+
+  const [organization, categories, counterparties, expenses] = await Promise.all([
+    getOrganizationById(currentUser.orgId),
+    getCategoriesByOrg(currentUser.orgId),
+    getCounterpartiesByOrg(currentUser.orgId),
+    getExpensesByOrg(currentUser.orgId),
+  ]);
+  const visibleExpenses =
+    currentUser.role === "ADMIN"
+      ? expenses
+      : expenses.filter((expense) => expense.userId === currentUser.id);
+  const visibleTransfers = visibleExpenses.filter((expense) => expense.counterPartyId !== null);
+
+  return {
+    organization: toOrganizationDto(organization),
+    categories,
+    counterparties,
+    expenses: visibleTransfers,
     currentUser: {
       id: currentUser.id,
       role: currentUser.role,
@@ -124,6 +203,8 @@ export async function createExpenseAction(
 
   const parsed = expenseSchema.safeParse({
     categoryId: formData.get("categoryId"),
+    counterPartyId: formData.get("counterPartyId"),
+    transferStatus: formData.get("transferStatus"),
     amount: formData.get("amount"),
     type: normalizeField(formData.get("type")) ?? "expense",
     transactionMode: normalizeField(formData.get("transactionMode")) ?? "online",
@@ -141,12 +222,21 @@ export async function createExpenseAction(
   if (!category || category.orgId !== orgId) {
     return { error: "Category does not belong to your organization" };
   }
+
+  const counterPartyId = await resolveCounterpartyId(orgId, parsed.data.counterPartyId);
+  if (parsed.data.counterPartyId != null && !counterPartyId) {
+    return { error: "Counterparty does not belong to your organization" };
+  }
+
   const expenseType = category.type;
+  const transferStatus = counterPartyId ? parsed.data.transferStatus ?? "open" : null;
 
   await createExpenseRecord({
     orgId,
     userId: currentUser.id,
     categoryId: parsed.data.categoryId,
+    counterPartyId,
+    transferStatus,
     amount: toMoneyString(parsed.data.amount),
     type: expenseType,
     transactionMode: parsed.data.transactionMode,
@@ -168,6 +258,8 @@ export async function updateExpenseAction(
 
   const parsed = expenseSchema.safeParse({
     categoryId: formData.get("categoryId"),
+    counterPartyId: formData.get("counterPartyId"),
+    transferStatus: formData.get("transferStatus"),
     amount: formData.get("amount"),
     transactionMode: normalizeField(formData.get("transactionMode")) ?? "online",
     scope: normalizeField(formData.get("scope")) ?? "personal",
@@ -196,10 +288,19 @@ export async function updateExpenseAction(
   if (!category || category.orgId !== orgId) {
     return { error: "Category does not belong to your organization" };
   }
+
+  const counterPartyId = await resolveCounterpartyId(orgId, parsed.data.counterPartyId);
+  if (parsed.data.counterPartyId != null && !counterPartyId) {
+    return { error: "Counterparty does not belong to your organization" };
+  }
+
   const expenseType = category.type;
+  const transferStatus = counterPartyId ? parsed.data.transferStatus ?? "open" : null;
 
   await updateExpenseRecord(expense.id, {
     categoryId: parsed.data.categoryId,
+    counterPartyId,
+    transferStatus,
     amount: toMoneyString(parsed.data.amount),
     type: expenseType,
     transactionMode: parsed.data.transactionMode,
@@ -213,11 +314,44 @@ export async function updateExpenseAction(
   redirect(ROUTES.EXPENSES);
 }
 
+export async function updateTransferStatusAction(
+  _previousState: FinanceActionState,
+  formData: FormData
+): Promise<FinanceActionState> {
+  const currentUser = await requireUser();
+  const orgId = assertOrgId(currentUser);
+  const parsed = transferStatusUpdateSchema.safeParse({
+    expenseId: formData.get("expenseId"),
+    transferStatus: formData.get("transferStatus"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Unable to update transfer" };
+  }
+
+  const expense = await ensureExpenseOwnershipOrAdmin(parsed.data.expenseId, currentUser);
+  if (!expense || expense.orgId !== orgId) {
+    return { error: "Transfer does not belong to your organization" };
+  }
+
+  if (expense.counterPartyId === null) {
+    return { error: "Transfer requires a counterparty" };
+  }
+
+  await updateExpenseRecord(expense.id, {
+    transferStatus: parsed.data.transferStatus,
+    updatedAt: new Date(),
+  });
+
+  redirect(ROUTES.TRANSFERS);
+}
+
 export async function deleteExpenseAction(
   _previousState: FinanceActionState,
   formData: FormData
 ): Promise<FinanceActionState> {
   const currentUser = await requireUser();
+  const orgId = assertOrgId(currentUser);
   const expenseIdResult = expenseIdSchema.safeParse({
     expenseId: formData.get("expenseId"),
   });
@@ -227,10 +361,11 @@ export async function deleteExpenseAction(
   }
 
   const expense = await ensureExpenseOwnershipOrAdmin(expenseIdResult.data.expenseId, currentUser);
-  if (!expense) {
+  if (!expense || expense.orgId !== orgId) {
     return { error: "Expense does not belong to your organization" };
   }
 
   await deleteExpenseRecord(expense.id);
+
   redirect(ROUTES.EXPENSES);
 }
