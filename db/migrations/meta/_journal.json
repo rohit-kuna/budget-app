@@ -43,6 +43,13 @@
       "when": 1780741316208,
       "tag": "0007_crazy_scream",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780758253087,
+      "tag": "0008_aromatic_joseph",
+      "breakpoints": true
     }
   ]
 }

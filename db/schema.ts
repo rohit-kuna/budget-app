@@ -101,8 +101,8 @@ export const transactionModes = pgTable(
   })
 );
 
-export const expenses = pgTable(
-  "expenses",
+export const financeTransactions = pgTable(
+  "finance_transactions",
   {
     id: serial("id").primaryKey(),
     orgId: integer("org_id").notNull().references(() => organizations.id),
@@ -125,23 +125,23 @@ export const expenses = pgTable(
   },
   (table) => ({
     necessityScoreCheck: check(
-      "expenses_necessity_score_check",
+      "finance_transactions_necessity_score_check",
       sql`${table.necessityScore} >= 1 AND ${table.necessityScore} <= 5`
     ),
-    exactDuplicateIdx: uniqueIndex("expenses_exact_duplicate_unique").on(
+    exactDuplicateIdx: uniqueIndex("finance_transactions_exact_duplicate_unique").on(
       table.amount,
       table.userId,
       table.categoryId,
       sql`coalesce(${table.note}, '')`,
       table.transactionTimestamp
     ),
-    orgIdx: index("expenses_org_id_idx").on(table.orgId),
-    userIdx: index("expenses_user_id_idx").on(table.userId),
-    categoryIdx: index("expenses_category_id_idx").on(table.categoryId),
-    counterPartyIdx: index("expenses_counter_party_id_idx").on(table.counterPartyId),
-    transactionModeIdx: index("expenses_transaction_mode_id_idx").on(table.transactionModeId),
-    transferStatusIdx: index("expenses_transfer_status_idx").on(table.transferStatus),
-    occurredAtIdx: index("expenses_occurred_at_idx").on(table.transactionTimestamp),
+    orgIdx: index("finance_transactions_org_id_idx").on(table.orgId),
+    userIdx: index("finance_transactions_user_id_idx").on(table.userId),
+    categoryIdx: index("finance_transactions_category_id_idx").on(table.categoryId),
+    counterPartyIdx: index("finance_transactions_counter_party_id_idx").on(table.counterPartyId),
+    transactionModeIdx: index("finance_transactions_transaction_mode_id_idx").on(table.transactionModeId),
+    transferStatusIdx: index("finance_transactions_transfer_status_idx").on(table.transferStatus),
+    occurredAtIdx: index("finance_transactions_occurred_at_idx").on(table.transactionTimestamp),
   })
 );
 

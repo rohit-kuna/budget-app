@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
-import { categories, counterParty, expenses, transactionModes } from "@/db/schema";
+import { categories, counterParty, financeTransactions, transactionModes } from "@/db/schema";
 import { requireUser } from "@/app/lib/auth";
 import { ROUTES } from "@/app/lib/constants";
 import { getCategoriesByOrg } from "@/app/actions/tables/categories.table.actions";
@@ -324,7 +324,7 @@ function isDuplicateExpenseConstraintError(error: unknown) {
     (error as any).code === "23505" &&
     "constraint" in error &&
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (error as any).constraint === "expenses_exact_duplicate_unique"
+    (error as any).constraint === "finance_transactions_exact_duplicate_unique"
   );
 }
 
@@ -1149,7 +1149,7 @@ export async function importExpensesFromWorkbookAction(
         );
 
         try {
-          await tx.insert(expenses).values({
+          await tx.insert(financeTransactions).values({
             orgId,
             userId: userSelection.userId,
             categoryId,
@@ -1700,7 +1700,7 @@ async function importUserScopedExpensesFromWorkbookAction(
         );
 
         try {
-          await tx.insert(expenses).values({
+          await tx.insert(financeTransactions).values({
             orgId,
             userId: currentUser.id,
             categoryId,
