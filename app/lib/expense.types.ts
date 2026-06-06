@@ -31,7 +31,6 @@ export type TransferDashboardDataDto = {
   organization: {
     id: number;
     name: string;
-    inviteCode: string;
     createdBy: string;
     createdAt: string;
     updatedAt: string;
@@ -52,7 +51,6 @@ export type ExpensesDashboardDataDto = {
   organization: {
     id: number;
     name: string;
-    inviteCode: string;
     createdBy: string;
     createdAt: string;
     updatedAt: string;

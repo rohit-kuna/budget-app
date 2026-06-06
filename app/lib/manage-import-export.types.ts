@@ -95,7 +95,6 @@ export type ManageImportExportDataDto = {
   organization: {
     id: number;
     name: string;
-    inviteCode: string;
     createdBy: string;
     createdAt: string;
     updatedAt: string;

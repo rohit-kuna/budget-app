@@ -4,7 +4,7 @@ import { buildExpenseExportWorkbook } from "@/app/lib/manage-import-export.workb
 
 export async function GET(request: Request) {
   void request;
-  const data = await getManageImportExportData("user");
+  const data = await getManageImportExportData();
 
   if (!data.organization || !data.currentUser.orgId) {
     return new Response("Unauthorized", { status: 401 });

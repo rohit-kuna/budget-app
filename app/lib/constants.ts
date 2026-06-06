@@ -12,7 +12,6 @@ export const ROUTES = {
   TRANSACTION_MODES: "/transaction-modes",
   BUDGETS: "/budgets",
   TRANSACTIONS: "/transactions",
-  EXPENSES: "/expenses",
   TRANSFERS: "/transfers",
   MANAGE_IMPORT_EXPORT: "/import-export",
   SERVICE_UNAVAILABLE: "/service-unavailable",

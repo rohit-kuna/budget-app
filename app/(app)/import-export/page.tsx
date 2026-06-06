@@ -9,7 +9,7 @@ type ManageImportExportPageProps = {
 
 export default async function ManageImportExportPage({ searchParams }: ManageImportExportPageProps) {
   void searchParams;
-  const data = await getManageImportExportData("user");
+  const data = await getManageImportExportData();
 
   if (!data.organization) {
     redirect(ROUTES.DASHBOARD);
