@@ -436,9 +436,19 @@ function ExpenseActivityChart({
                   <XAxis dataKey="label" tickMargin={10} tick={{ fontSize: 12 }} />
                   <YAxis tickFormatter={(value) => formatCompactMoney(Number(value))} width={72} tick={{ fontSize: 12 }} />
                   <Tooltip
-                    formatter={(value, name) => [formatMoney(Number(value ?? 0)), String(name)]}
-                    labelFormatter={(label) => String(label)}
                     cursor={{ fill: "var(--color-muted)" }}
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null;
+                      const income = payload.find((p) => p.dataKey === "income");
+                      const expense = payload.find((p) => p.dataKey === "expense");
+                      return (
+                        <div className="rounded-lg border bg-background px-3 py-2 text-sm shadow-lg">
+                          <p className="mb-1 font-medium">{String(label)}</p>
+                          {income ? <p>Income : {formatMoney(Number(income.value ?? 0))}</p> : null}
+                          {expense ? <p>Expense : {formatMoney(Number(expense.value ?? 0))}</p> : null}
+                        </div>
+                      );
+                    }}
                   />
                   <Legend content={<OrderedLegend items={expenseLegendItems} />} />
                   <Bar dataKey="income" name="Income" radius={[6, 6, 0, 0]} minPointSize={4}>
@@ -820,14 +830,19 @@ function CategoryByTypeChart({
                   tick={{ fontSize: 12 }}
                 />
                 <Tooltip
-                  formatter={(value, name, payload) => {
-                    const row = payload?.payload as (typeof chartData)[number] | undefined;
-                    const amount = Number(value ?? 0);
-                    const percent = row ? row.percentage.toFixed(1) : "0.0";
-                    return [`${formatMoney(amount)} (${percent}%)`, String(name)];
-                  }}
-                  labelFormatter={(label) => String(label)}
                   cursor={{ fill: "var(--color-muted)" }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const entry = payload[0];
+                    const row = entry?.payload as (typeof chartData)[number] | undefined;
+                    if (!row) return null;
+                    return (
+                      <div className="rounded-lg border bg-background px-3 py-2 text-sm shadow-lg">
+                        <p className="mb-1 font-medium">{row.categoryName}</p>
+                        <p>{formatMoney(row.amount)} ({row.percentage.toFixed(1)}%)</p>
+                      </div>
+                    );
+                  }}
                 />
                 <Legend content={<OrderedLegend items={categoryLegendItems} />} />
                 <Bar dataKey="amount" name="Total amount" radius={[0, 8, 8, 0]}>
@@ -1013,9 +1028,20 @@ function NecessitySpendChart({
                 <XAxis dataKey="label" tickMargin={10} tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(value) => formatCompactMoney(Number(value))} width={72} tick={{ fontSize: 12 }} />
                 <Tooltip
-                  formatter={(value, name) => [formatMoney(Number(value ?? 0)), String(name)]}
-                  labelFormatter={(label) => String(label)}
                   cursor={{ fill: "var(--color-muted)" }}
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    return (
+                      <div className="rounded-lg border bg-background px-3 py-2 text-sm shadow-lg">
+                        <p className="mb-1 font-medium">{String(label)}</p>
+                        <div className="space-y-0.5">
+                          {payload.map((entry) => (
+                            <p key={String(entry.dataKey)}>{String(entry.name)}: {formatMoney(Number(entry.value ?? 0))}</p>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }}
                 />
                 <Legend content={<OrderedLegend items={necessityLegendItems} />} />
                 {[
@@ -1191,9 +1217,20 @@ function ExpenseTrendChart({
               <XAxis dataKey="label" tickMargin={10} minTickGap={24} tick={{ fontSize: 12 }} />
               <YAxis tickFormatter={(value) => formatCompactMoney(Number(value))} width={72} tick={{ fontSize: 12 }} />
               <Tooltip
-                formatter={(value, name) => [formatMoney(Number(value ?? 0)), String(name)]}
-                labelFormatter={(label) => String(label)}
                 cursor={{ stroke: "var(--color-muted)" }}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  return (
+                    <div className="rounded-lg border bg-background px-3 py-2 text-sm shadow-lg">
+                      <p className="mb-1 font-medium">{String(label)}</p>
+                      <div className="space-y-0.5">
+                        {payload.map((entry) => (
+                          <p key={String(entry.dataKey)}>{String(entry.name)}: {formatMoney(Number(entry.value ?? 0))}</p>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }}
               />
               <Legend content={<OrderedLegend items={trendLegendItems} />} />
               <Line

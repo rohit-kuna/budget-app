@@ -398,6 +398,16 @@ function ExpenseFormCard({
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="expense-note">Note</Label>
+              <textarea
+                id="expense-note"
+                name="note"
+                defaultValue={editingExpense?.note ?? ""}
+                placeholder="Lunch with the team"
+                className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+            </div>
             <div className={cn(!isAdvanced && "hidden")}>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
@@ -449,16 +459,6 @@ function ExpenseFormCard({
                     }))}
                     required={false}
                     includeEmptyOption="No counterparty"
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="expense-note">Note</Label>
-                  <textarea
-                    id="expense-note"
-                    name="note"
-                    defaultValue={editingExpense?.note ?? ""}
-                    placeholder="Lunch with the team"
-                    className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
               </div>
