@@ -101,6 +101,9 @@ function CategorySelect({
   value: number;
   onChange: (value: number) => void;
 }) {
+  const expenseCategories = categories.filter((c) => c.type === "expense");
+  const incomeCategories = categories.filter((c) => c.type === "income");
+
   return (
     <select
       name="categoryId"
@@ -109,11 +112,24 @@ function CategorySelect({
       className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
       required
     >
-      {categories.map((category) => (
-        <option key={category.id} value={category.id}>
-          {category.name}
-        </option>
-      ))}
+      {expenseCategories.length > 0 && (
+        <optgroup label="Expense">
+          {expenseCategories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </optgroup>
+      )}
+      {incomeCategories.length > 0 && (
+        <optgroup label="Income">
+          {incomeCategories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </optgroup>
+      )}
     </select>
   );
 }
