@@ -49,7 +49,6 @@ type HeaderNavConfig = {
 const adminTopNavItems: HeaderNavItem[] = [
   { label: "Activity", href: ROUTES.ACTIVITY },
   { label: "Budgets", href: ROUTES.BUDGETS },
-  { label: "Transfers", href: ROUTES.TRANSFERS },
 ];
 
 const adminSettingsItems: HeaderNavItem[] = [
@@ -58,18 +57,19 @@ const adminSettingsItems: HeaderNavItem[] = [
   { label: "Categories", href: ROUTES.CATEGORIES },
   { label: "Counterparties", href: ROUTES.COUNTERPARTIES },
   { label: "Modes", href: ROUTES.TRANSACTION_MODES },
+  { label: "Transfers", href: ROUTES.TRANSFERS },
   { label: "Import Export", href: ROUTES.MANAGE_IMPORT_EXPORT },
 ];
 
 const userTopNavItems: HeaderNavItem[] = [
   { label: "Activity", href: ROUTES.ACTIVITY },
   { label: "Budgets", href: ROUTES.BUDGETS },
-  { label: "Transfers", href: ROUTES.TRANSFERS },
 ];
 
 const userSettingsItems: HeaderNavItem[] = [
   { label: "Counterparties", href: ROUTES.COUNTERPARTIES },
   { label: "Modes", href: ROUTES.TRANSACTION_MODES },
+  { label: "Transfers", href: ROUTES.TRANSFERS },
   { label: "Import Export", href: ROUTES.MANAGE_IMPORT_EXPORT },
 ];
 
