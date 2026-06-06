@@ -29,6 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -62,6 +63,18 @@ function formatNecessityScore(score: number) {
 
 function formatTransactionModeLabel(mode: TransactionModeRecordDto) {
   return mode.isDefault ? `${mode.name} (default)` : mode.name;
+}
+
+function getTransactionCardClasses(transactionType: "income" | "expense" | null) {
+  if (transactionType === "income") {
+    return "overflow-hidden border-emerald-500/50 bg-emerald-500/15 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] dark:border-emerald-400/50 dark:bg-emerald-950/35";
+  }
+
+  if (transactionType === "expense") {
+    return "overflow-hidden border-pink-500/55 bg-pink-500/15 shadow-[0_0_0_1px_rgba(236,72,153,0.25)] dark:border-pink-400/50 dark:bg-pink-950/35";
+  }
+
+  return "overflow-hidden border-primary/35 bg-primary/10 shadow-[0_0_0_1px_rgba(244,114,182,0.15)]";
 }
 
 function ActionError({ message }: { message: string | null }) {
@@ -223,12 +236,14 @@ function ExpenseFormCard({
   counterparties,
   transactionModes,
   editingExpense,
+  recentCategoryId,
   onCancelEdit,
 }: {
   categories: CategoryRecordDto[];
   counterparties: CounterpartyRecordDto[];
   transactionModes: TransactionModeRecordDto[];
   editingExpense: ExpenseRecordDto | null;
+  recentCategoryId: number | null;
   onCancelEdit: () => void;
 }) {
   const [createState, createAction, createPending] = useActionState(createExpenseAction, financeInitialState);
@@ -242,24 +257,55 @@ function ExpenseFormCard({
   const defaultTransactionModeId = editingExpense?.transactionModeId
     ? String(editingExpense.transactionModeId)
     : String(transactionModes.find((mode) => mode.isDefault)?.id ?? transactionModes[0]?.id ?? "");
-  const [selectedCategoryId, setSelectedCategoryId] = useState(
-    editingExpense?.categoryId ?? categories[0]?.id ?? 0
-  );
-  const resolvedSelectedCategoryId = categories.some((category) => category.id === selectedCategoryId)
-    ? selectedCategoryId
-    : editingExpense?.categoryId ?? categories[0]?.id ?? 0;
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const defaultCategoryId = isEditing
+    ? editingExpense?.categoryId ?? categories[0]?.id ?? 0
+    : categories.some((category) => category.id === recentCategoryId)
+      ? recentCategoryId ?? categories[0]?.id ?? 0
+      : categories[0]?.id ?? 0;
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const resolvedSelectedCategoryId =
+    selectedCategoryId !== null && categories.some((category) => category.id === selectedCategoryId)
+      ? selectedCategoryId
+      : defaultCategoryId;
 
-  const selectedCategory = useMemo(
-    () => categories.find((category) => category.id === resolvedSelectedCategoryId) ?? null,
-    [categories, resolvedSelectedCategoryId]
+  const isAdvanced = isEditing || showAdvanced;
+  const transactionCardClasses = getTransactionCardClasses(
+    categories.find((category) => category.id === resolvedSelectedCategoryId)?.type ?? null
   );
 
   return (
-    <Card className="border-primary/20 bg-primary/5 py-2">
-      <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
-        <CardTitle className="text-2xl tracking-tight">
-          {isEditing ? "Edit Transaction" : "Add Transaction"}
-        </CardTitle>
+    <Card className={cn("py-2", transactionCardClasses)}>
+      <CardHeader className="flex flex-row items-start justify-between gap-4 px-4 pt-6 sm:px-8 sm:pt-8">
+        <div className="space-y-1">
+          <CardTitle className="text-2xl tracking-tight">
+            {isEditing ? "Edit Transaction" : "Add Transaction"}
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            {isEditing
+              ? "Update all transaction details."
+              : "Quick Add keeps the essentials visible while Advanced reveals the full form."}
+          </p>
+        </div>
+        {!isEditing ? (
+          <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/90 px-3 py-2 shadow-sm">
+            <span className={cn("text-xs font-medium uppercase tracking-wide", !showAdvanced && "text-foreground")}>
+              Quick Add
+            </span>
+            <Switch
+              checked={showAdvanced}
+              onCheckedChange={setShowAdvanced}
+              aria-label="Toggle advanced transaction fields"
+            />
+            <span className={cn("text-xs font-medium uppercase tracking-wide", showAdvanced && "text-foreground")}>
+              Advanced
+            </span>
+          </div>
+        ) : (
+          <Badge variant="secondary" className="shrink-0">
+            Advanced
+          </Badge>
+        )}
       </CardHeader>
       <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
         {!categories.length ? (
@@ -274,106 +320,107 @@ function ExpenseFormCard({
           <form
             key={editingExpense?.id ?? "new-expense"}
             action={activeAction}
-            className="grid gap-4 rounded-lg border border-primary/20 bg-background/80 p-4 sm:grid-cols-2"
+            className="space-y-4 rounded-lg p-4"
           >
             {editingExpense ? <input type="hidden" name="expenseId" value={editingExpense.id} /> : null}
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <CategorySelect categories={categories} value={resolvedSelectedCategoryId} onChange={setSelectedCategoryId} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="expense-type">Type</Label>
-              <Input
-                id="expense-type"
-                value={selectedCategory?.type ?? "—"}
-                readOnly
-                tabIndex={-1}
-                className="bg-muted/40 capitalize"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="expense-amount">Amount</Label>
-              <Input
-                id="expense-amount"
-                name="amount"
-                type="number"
-                min="1"
-                step="0.01"
-                defaultValue={editingExpense?.amount ?? ""}
-                placeholder="250"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Transaction mode</Label>
-              <FormSelect
-                name="transactionModeId"
-                defaultValue={defaultTransactionModeId}
-                options={transactionModes.map((mode) => ({
-                  value: String(mode.id),
-                  label: formatTransactionModeLabel(mode),
-                }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <NecessityScoreSlider defaultValue={editingExpense?.necessityScore ?? 1} />
-            </div>
-            <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="expense-date">Date</Label>
-                <Input id="expense-date" name="occurredAt" type="date" defaultValue={defaultOccurredAt} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="expense-counterparty">Counterparty</Label>
-                <FormSelect
-                  id="expense-counterparty"
-                  name="counterPartyId"
-                  defaultValue={editingExpense?.counterPartyId ? String(editingExpense.counterPartyId) : ""}
-                  options={counterparties.map((counterparty) => ({
-                    value: String(counterparty.id),
-                    label: counterparty.name,
-                  }))}
-                  required={false}
-                  includeEmptyOption="No counterparty"
+                <Label htmlFor="expense-amount">Amount</Label>
+                <Input
+                  id="expense-amount"
+                  name="amount"
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  defaultValue={editingExpense?.amount ?? ""}
+                  placeholder="250"
+                  className="bg-background"
+                  required
                 />
               </div>
-              <p className="text-sm text-muted-foreground sm:col-span-2">
-                Link any expense to a counterparty. This is available for all categories.
-              </p>
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="expense-note">Note</Label>
-              <textarea
-                id="expense-note"
-                name="note"
-                defaultValue={editingExpense?.note ?? ""}
-                placeholder="Lunch with the team"
-                className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2 sm:col-span-2">
-              <Badge variant="secondary">Default: {transactionModes.find((mode) => mode.isDefault)?.name ?? "none"}</Badge>
-              <Badge variant="secondary">Default: 1</Badge>
-            </div>
-            <div className="sm:col-span-2">
-              <ActionError message={activeError} />
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button type="submit" disabled={activePending} className="w-full sm:w-auto">
-                  {activePending
-                    ? isEditing
-                      ? "Saving..."
-                      : "Adding..."
-                    : isEditing
-                      ? "Save Transaction"
-                      : "Add Transaction"}
-                </Button>
-                {isEditing ? (
-                  <Button type="button" variant="outline" onClick={onCancelEdit} className="w-full sm:w-auto">
-                    <X className="mr-2 size-4" />
-                    Cancel
-                  </Button>
-                ) : null}
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <CategorySelect
+                  categories={categories}
+                  value={resolvedSelectedCategoryId}
+                  onChange={setSelectedCategoryId}
+                />
               </div>
+            </div>
+            <div className={cn(!isAdvanced && "hidden")}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="expense-date">Date</Label>
+                  <Input
+                    id="expense-date"
+                    name="occurredAt"
+                    type="date"
+                    defaultValue={defaultOccurredAt}
+                    className="bg-background"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Transaction mode</Label>
+                  <FormSelect
+                    name="transactionModeId"
+                    defaultValue={defaultTransactionModeId}
+                    options={transactionModes.map((mode) => ({
+                      value: String(mode.id),
+                      label: formatTransactionModeLabel(mode),
+                    }))}
+                  />
+                </div>
+                <div>
+                  <NecessityScoreSlider defaultValue={editingExpense?.necessityScore ?? 1} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expense-counterparty">Counterparty</Label>
+                  <FormSelect
+                    id="expense-counterparty"
+                    name="counterPartyId"
+                    defaultValue={editingExpense?.counterPartyId ? String(editingExpense.counterPartyId) : ""}
+                    options={counterparties.map((counterparty) => ({
+                      value: String(counterparty.id),
+                      label: counterparty.name,
+                    }))}
+                    required={false}
+                    includeEmptyOption="No counterparty"
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="expense-note">Note</Label>
+                  <textarea
+                    id="expense-note"
+                    name="note"
+                    defaultValue={editingExpense?.note ?? ""}
+                    placeholder="Lunch with the team"
+                    className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="secondary">Default mode: {transactionModes.find((mode) => mode.isDefault)?.name ?? "none"}</Badge>
+              <Badge variant="secondary">Default score: 1</Badge>
+            </div>
+            <ActionError message={activeError} />
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button type="submit" disabled={activePending} className="w-full sm:w-auto">
+                {activePending
+                  ? isEditing
+                    ? "Saving..."
+                    : "Adding..."
+                  : isEditing
+                    ? "Save Transaction"
+                    : "Add Transaction"}
+              </Button>
+              {isEditing ? (
+                <Button type="button" variant="outline" onClick={onCancelEdit} className="w-full sm:w-auto">
+                  <X className="mr-2 size-4" />
+                  Cancel
+                </Button>
+              ) : null}
             </div>
           </form>
         )}
@@ -723,6 +770,16 @@ function ExpenseTable({
 export function ExpenseManagement({ data }: { data: ExpensesDashboardDataDto }) {
   const [editingExpense, setEditingExpense] = useState<ExpenseRecordDto | null>(null);
   const isAdmin = data.currentUser.role === "ADMIN";
+  const recentCategoryId = useMemo(() => {
+    const recentExpense = data.expenses
+      .filter((expense) => expense.userId === data.currentUser.id)
+      .slice()
+      .sort((left, right) =>
+        right.occurredAt.localeCompare(left.occurredAt) || right.createdAt.localeCompare(left.createdAt)
+      )[0];
+
+    return recentExpense?.categoryId ?? null;
+  }, [data.currentUser.id, data.expenses]);
 
   return (
     <section className="space-y-6">
@@ -740,6 +797,7 @@ export function ExpenseManagement({ data }: { data: ExpensesDashboardDataDto }) 
         counterparties={data.counterparties}
         transactionModes={data.transactionModes}
         editingExpense={editingExpense}
+        recentCategoryId={recentCategoryId}
         onCancelEdit={() => setEditingExpense(null)}
       />
 
