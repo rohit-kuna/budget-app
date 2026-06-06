@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MonthInput } from "@/components/ui/month-input";
 import {
   Table,
   TableBody,
@@ -291,11 +292,7 @@ export function TransferManagement({
             </div>
             <div className="space-y-2">
               <Label>Month</Label>
-              <Input
-                type="month"
-                value={monthFilter === "all" ? "" : monthFilter}
-                onChange={(event) => setMonthFilter(event.target.value || "all")}
-              />
+              <MonthInput value={monthFilter === "all" ? "" : monthFilter} onChange={(event) => setMonthFilter(event.target.value || "all")} />
             </div>
           </div>
 

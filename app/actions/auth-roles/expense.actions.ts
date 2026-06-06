@@ -123,6 +123,7 @@ export async function getExpensesDashboardData(): Promise<ExpensesDashboardDataD
       expenses: [],
       currentUser: {
         id: currentUser.id,
+        name: currentUser.name,
         role: currentUser.role,
         orgId: null,
       },
@@ -148,6 +149,7 @@ export async function getExpensesDashboardData(): Promise<ExpensesDashboardDataD
     expenses: visibleExpenses,
     currentUser: {
       id: currentUser.id,
+      name: currentUser.name,
       role: currentUser.role,
       orgId: currentUser.orgId,
     },
@@ -166,6 +168,7 @@ export async function getTransfersDashboardData(): Promise<TransferDashboardData
       expenses: [],
       currentUser: {
         id: currentUser.id,
+        name: currentUser.name,
         role: currentUser.role,
         orgId: null,
       },
@@ -193,6 +196,7 @@ export async function getTransfersDashboardData(): Promise<TransferDashboardData
     expenses: visibleTransfers,
     currentUser: {
       id: currentUser.id,
+      name: currentUser.name,
       role: currentUser.role,
       orgId: currentUser.orgId,
     },
@@ -317,7 +321,7 @@ export async function updateExpenseAction(
     type: expenseType,
     necessityScore: parsed.data.necessityScore,
     note: parsed.data.note,
-    occurredAt: parseExpenseDate(parsed.data.occurredAt),
+    occurredAt: parseExpenseDate(parsed.data.occurredAt, new Date(expense.occurredAt)),
     updatedAt: new Date(),
   });
 

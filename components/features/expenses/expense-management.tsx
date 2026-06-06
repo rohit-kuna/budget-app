@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useMemo, useRef, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -10,7 +10,7 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, PencilLine, Trash2, X } from "lucide-react";
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, CalendarDays, PencilLine, Trash2, X } from "lucide-react";
 import { financeInitialState } from "@/app/actions/auth-roles/finance.types";
 import {
   createExpenseAction,
@@ -23,12 +23,16 @@ import type {
   TransactionModeRecordDto,
 } from "@/app/lib/finance.types";
 import type { ExpenseRecordDto, ExpensesDashboardDataDto } from "@/app/lib/expense.types";
-import { getTodayExpenseDateInputValue, formatExpenseDate } from "@/app/lib/expense-date";
+import {
+  formatExpenseDate,
+  toExpenseDateInputValue,
+} from "@/app/lib/expense-date";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MonthInput } from "@/components/ui/month-input";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -248,12 +252,15 @@ function ExpenseFormCard({
 }) {
   const [createState, createAction, createPending] = useActionState(createExpenseAction, financeInitialState);
   const [updateState, updateAction, updatePending] = useActionState(updateExpenseAction, financeInitialState);
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const isEditing = Boolean(editingExpense);
   const activeAction = isEditing ? updateAction : createAction;
   const activePending = isEditing ? updatePending : createPending;
   const activeError = isEditing ? updateState.error : createState.error;
-  const defaultOccurredAt = editingExpense ? editingExpense.occurredAt.slice(0, 10) : getTodayExpenseDateInputValue();
+  const defaultOccurredAt = editingExpense
+    ? toExpenseDateInputValue(new Date(editingExpense.occurredAt))
+    : toExpenseDateInputValue(new Date());
   const defaultTransactionModeId = editingExpense?.transactionModeId
     ? String(editingExpense.transactionModeId)
     : String(transactionModes.find((mode) => mode.isDefault)?.id ?? transactionModes[0]?.id ?? "");
@@ -263,11 +270,10 @@ function ExpenseFormCard({
     : categories.some((category) => category.id === recentCategoryId)
       ? recentCategoryId ?? categories[0]?.id ?? 0
       : categories[0]?.id ?? 0;
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const resolvedSelectedCategoryId =
-    selectedCategoryId !== null && categories.some((category) => category.id === selectedCategoryId)
-      ? selectedCategoryId
-      : defaultCategoryId;
+  const [selectedCategoryId, setSelectedCategoryId] = useState(defaultCategoryId);
+  const resolvedSelectedCategoryId = categories.some((category) => category.id === selectedCategoryId)
+    ? selectedCategoryId
+    : defaultCategoryId;
 
   const isAdvanced = isEditing || showAdvanced;
   const transactionCardClasses = getTransactionCardClasses(
@@ -351,14 +357,26 @@ function ExpenseFormCard({
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="expense-date">Date</Label>
-                  <Input
-                    id="expense-date"
-                    name="occurredAt"
-                    type="date"
-                    defaultValue={defaultOccurredAt}
-                    className="bg-background"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      ref={dateInputRef}
+                      id="expense-date"
+                      name="occurredAt"
+                      type="date"
+                      defaultValue={defaultOccurredAt}
+                      className="bg-background pr-11"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => dateInputRef.current?.showPicker?.()}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      aria-label="Open date picker"
+                      title="Open date picker"
+                    >
+                      <CalendarDays className="size-4" />
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Transaction mode</Label>
@@ -697,11 +715,7 @@ function ExpenseTable({
           </div>
           <div className="space-y-2">
             <Label>Month</Label>
-            <Input
-              type="month"
-              value={monthFilter === "all" ? "" : monthFilter}
-              onChange={(event) => setMonthFilter(event.target.value || "all")}
-            />
+            <MonthInput value={monthFilter === "all" ? "" : monthFilter} onChange={(event) => setMonthFilter(event.target.value || "all")} />
           </div>
           <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-4">
             <Button type="button" variant="outline" size="sm" onClick={() => setQuery("")}>
@@ -770,6 +784,8 @@ function ExpenseTable({
 export function ExpenseManagement({ data }: { data: ExpensesDashboardDataDto }) {
   const [editingExpense, setEditingExpense] = useState<ExpenseRecordDto | null>(null);
   const isAdmin = data.currentUser.role === "ADMIN";
+  const organizationName = data.organization?.name ?? "your organization";
+  const greetingName = data.currentUser.name || "there";
   const recentCategoryId = useMemo(() => {
     const recentExpense = data.expenses
       .filter((expense) => expense.userId === data.currentUser.id)
@@ -785,7 +801,12 @@ export function ExpenseManagement({ data }: { data: ExpensesDashboardDataDto }) 
     <section className="space-y-6">
       <Card className="py-2">
         <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
-          <CardTitle className="text-3xl tracking-tight">Transactions</CardTitle>
+          <CardTitle className="max-w-3xl text-3xl leading-tight tracking-tight">
+            <span className="block text-base font-medium text-muted-foreground sm:text-lg">
+              Hi {greetingName}, welcome to {organizationName}
+            </span>
+            <span className="block">Manage Your Transactions</span>
+          </CardTitle>
           <p className="max-w-3xl text-sm text-muted-foreground">
             Add a transaction quickly, then use filters and sorting to review your own spending.
           </p>
@@ -793,6 +814,7 @@ export function ExpenseManagement({ data }: { data: ExpensesDashboardDataDto }) 
       </Card>
 
       <ExpenseFormCard
+        key={editingExpense?.id ?? `new-${recentCategoryId ?? "none"}`}
         categories={data.categories}
         counterparties={data.counterparties}
         transactionModes={data.transactionModes}

@@ -42,6 +42,7 @@ export type TransferDashboardDataDto = {
   expenses: ExpenseRecordDto[];
   currentUser: {
     id: string;
+    name: string;
     role: "ADMIN" | "USER";
     orgId: number | null;
   };
@@ -62,6 +63,7 @@ export type ExpensesDashboardDataDto = {
   expenses: ExpenseRecordDto[];
   currentUser: {
     id: string;
+    name: string;
     role: "ADMIN" | "USER";
     orgId: number | null;
   };

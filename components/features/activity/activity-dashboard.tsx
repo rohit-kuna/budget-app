@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { MonthInput } from "@/components/ui/month-input";
 import { cn } from "@/lib/utils";
 import type { ActivityDashboardDataDto } from "@/app/lib/activity.types";
 
@@ -1314,10 +1315,10 @@ export function ActivityDashboard({
 
             <div className="space-y-2">
               <Label htmlFor="activity-month-start">Month start</Label>
-              <input
+              <MonthInput
                 id="activity-month-start"
-                type="month"
                 value={monthStart}
+                className="h-11"
                 onChange={(event) => {
                   const nextValue = event.target.value;
                   setMonthStart(nextValue);
@@ -1325,16 +1326,15 @@ export function ActivityDashboard({
                     setMonthEnd(nextValue);
                   }
                 }}
-                className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="activity-month-end">Month end</Label>
-              <input
+              <MonthInput
                 id="activity-month-end"
-                type="month"
                 value={monthEnd}
+                className="h-11"
                 onChange={(event) => {
                   const nextValue = event.target.value;
                   setMonthEnd(nextValue);
@@ -1342,7 +1342,6 @@ export function ActivityDashboard({
                     setMonthStart(nextValue);
                   }
                 }}
-                className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
               />
             </div>
           </div>
