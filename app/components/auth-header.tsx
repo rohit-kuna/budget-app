@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SignOutButton } from "@clerk/nextjs";
+import { Menu } from "lucide-react";
 import { ROUTES } from "@/app/lib/constants";
 import { ROLES, type AppRole } from "@/app/lib/roles";
 import { AppLogo } from "@/app/components/app-logo";
@@ -131,8 +132,9 @@ export function AuthHeader({
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between lg:max-w-none lg:px-10 xl:px-14 2xl:px-20">
-        <div className="flex items-center justify-between gap-3 md:justify-start md:gap-8">
+      <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 sm:px-6 lg:max-w-none lg:px-10 xl:px-14 2xl:px-20">
+        {/* Left: logo + desktop nav */}
+        <div className="flex items-center gap-3 md:gap-8">
           <AppLogo href={logoHref} label={organizationName ?? "Finwise Workspace"} />
           {topItems.length || settingsItems.length ? (
             <NavigationMenu viewport={false} className="hidden md:block">
@@ -146,12 +148,14 @@ export function AuthHeader({
           ) : null}
         </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-2">
+        {/* Right: icon buttons */}
+        <div className="flex items-center gap-2">
+          {/* Mobile hamburger menu */}
           {topItems.length || settingsItems.length ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 md:hidden">
-                  Menu
+                <Button variant="outline" size="icon" className="md:hidden">
+                  <Menu className="size-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -178,13 +182,15 @@ export function AuthHeader({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : null}
+
+          {/* User dropdown — avatar-only on mobile, avatar+name on desktop */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="max-w-40 justify-start gap-2 sm:max-w-56">
+              <Button variant="outline" size="icon" className="gap-2 md:w-auto md:px-3">
                 <Avatar size="sm">
                   <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
-                <span className="truncate text-sm">{displayName}</span>
+                <span className="hidden truncate text-sm md:inline">{displayName}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -216,6 +222,7 @@ export function AuthHeader({
               </SignOutButton>
             </DropdownMenuContent>
           </DropdownMenu>
+
           <ModeToggle />
         </div>
       </div>

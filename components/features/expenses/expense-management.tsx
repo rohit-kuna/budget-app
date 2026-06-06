@@ -327,36 +327,43 @@ function ExpenseFormCard({
 
   return (
     <Card className={cn("py-2", transactionCardClasses)}>
-      <CardHeader className="flex flex-row items-start justify-between gap-4 px-4 pt-6 sm:px-8 sm:pt-8">
-        <div className="space-y-1">
-          <CardTitle className="text-2xl tracking-tight">
-            {isEditing ? "Edit Transaction" : "Add Transaction"}
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {isEditing
-              ? "Update all transaction details."
-              : "Quick Add keeps the essentials visible while Advanced reveals the full form."}
-          </p>
-        </div>
+      <CardHeader className="flex flex-col gap-2 px-4 pt-6 sm:px-8 sm:pt-8">
         {!isEditing ? (
-          <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/90 px-3 py-2 shadow-sm">
-            <span className={cn("text-xs font-medium uppercase tracking-wide", !showAdvanced && "text-foreground")}>
-              Quick Add
-            </span>
-            <Switch
-              checked={showAdvanced}
-              onCheckedChange={setShowAdvanced}
-              aria-label="Toggle advanced transaction fields"
-            />
-            <span className={cn("text-xs font-medium uppercase tracking-wide", showAdvanced && "text-foreground")}>
-              Advanced
-            </span>
+          <div className="flex justify-end w-full">
+            <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/90 px-3 py-2 shadow-sm">
+              <span className={cn("text-xs font-medium uppercase tracking-wide", !showAdvanced && "text-foreground")}>
+                <span className="sm:hidden">Quick</span>
+                <span className="hidden sm:inline">Quick Add</span>
+              </span>
+              <Switch
+                checked={showAdvanced}
+                onCheckedChange={setShowAdvanced}
+                aria-label="Toggle advanced transaction fields"
+              />
+              <span className={cn("text-xs font-medium uppercase tracking-wide", showAdvanced && "text-foreground")}>
+                <span className="sm:hidden">Adv</span>
+                <span className="hidden sm:inline">Advanced</span>
+              </span>
+            </div>
           </div>
-        ) : (
-          <Badge variant="secondary" className="shrink-0">
-            Advanced
-          </Badge>
-        )}
+        ) : null}
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <CardTitle className="text-2xl tracking-tight">
+              {isEditing ? "Edit Transaction" : "Add Transaction"}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {isEditing
+                ? "Update all transaction details."
+                : "Quick Add keeps the essentials visible while Advanced reveals the full form."}
+            </p>
+          </div>
+          {isEditing ? (
+            <Badge variant="secondary" className="shrink-0">
+              Advanced
+            </Badge>
+          ) : null}
+        </div>
       </CardHeader>
       <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
         {!categories.length ? (
