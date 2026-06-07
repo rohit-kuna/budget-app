@@ -1,7 +1,8 @@
 "use client";
 
-import { AlertCircle, KeyRound, ShieldPlus } from "lucide-react";
+import { AlertCircle, KeyRound, ShieldPlus, Star, Users } from "lucide-react";
 import { useActionState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,8 +16,17 @@ import { Label } from "@/components/ui/label";
 import {
   createOrganizationFromOnboardingAction,
   joinOrganizationByInviteCodeAction,
+  openOrganizationAction,
+  setDefaultOrganizationAction,
 } from "@/app/actions/auth-roles/onboarding.actions";
 import { onboardingInitialState } from "@/app/actions/auth-roles/onboarding.types";
+
+export type OnboardingOrganization = {
+  orgId: number;
+  orgName: string;
+  role: string;
+  isDefault: boolean;
+};
 
 function SubmitButton({
   children,
@@ -43,7 +53,11 @@ function ActionError({ message }: { message: string | null }) {
   );
 }
 
-export function OnboardingDashboard() {
+export function OnboardingDashboard({
+  organizations = [],
+}: {
+  organizations?: OnboardingOrganization[];
+}) {
   const [joinState, joinAction, joinPending] = useActionState(
     joinOrganizationByInviteCodeAction,
     onboardingInitialState
@@ -54,7 +68,59 @@ export function OnboardingDashboard() {
   );
 
   return (
-    <section className="grid gap-6 lg:grid-cols-2">
+    <div className="space-y-6">
+      {organizations.length > 0 && (
+        <Card className="py-2">
+          <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
+            <div className="mb-4 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Users className="size-5" />
+            </div>
+            <CardTitle className="text-2xl tracking-tight">Your organizations</CardTitle>
+            <CardDescription>
+              Open one of your existing organizations, or set one as your default landing
+              workspace.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 px-4 pb-6 sm:px-8 sm:pb-8">
+            {organizations.map((org) => (
+              <div
+                key={org.orgId}
+                className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold">{org.orgName}</p>
+                    <Badge variant="secondary">{org.role}</Badge>
+                    {org.isDefault && (
+                      <Badge variant="success" className="gap-1">
+                        <Star className="size-3" /> Default
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {!org.isDefault && (
+                    <form action={setDefaultOrganizationAction}>
+                      <input type="hidden" name="orgId" value={org.orgId} />
+                      <Button type="submit" variant="ghost" size="sm" className="gap-1.5">
+                        <Star className="size-3.5" /> Set as default
+                      </Button>
+                    </form>
+                  )}
+                  <form action={openOrganizationAction}>
+                    <input type="hidden" name="orgId" value={org.orgId} />
+                    <Button type="submit" variant="outline" size="sm">
+                      Open
+                    </Button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      <section className="grid gap-6 lg:grid-cols-2">
       <Card className="py-2">
         <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
           <div className="mb-4 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -120,6 +186,7 @@ export function OnboardingDashboard() {
           </div>
         </CardContent>
       </Card>
-    </section>
+      </section>
+    </div>
   );
 }

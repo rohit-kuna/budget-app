@@ -3,6 +3,7 @@ import type {
   CounterpartyRecordDto,
   TransactionModeRecordDto,
 } from "@/app/lib/finance.types";
+import type { AppRole } from "@/app/lib/roles";
 
 export type ExpenseRecordDto = {
   id: number;
@@ -42,7 +43,7 @@ export type TransferDashboardDataDto = {
   currentUser: {
     id: string;
     name: string;
-    role: "ADMIN" | "USER";
+    role: AppRole | null;
     orgId: number | null;
   };
 };
@@ -62,7 +63,7 @@ export type ExpensesDashboardDataDto = {
   currentUser: {
     id: string;
     name: string;
-    role: "ADMIN" | "USER";
+    role: AppRole | null;
     orgId: number | null;
   };
 };

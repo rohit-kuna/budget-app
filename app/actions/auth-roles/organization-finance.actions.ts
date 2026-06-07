@@ -21,7 +21,7 @@ import {
   updateBudgetRecord,
 } from "@/app/actions/tables/budgets.table.actions";
 import { getCounterpartiesByOrg } from "@/app/actions/tables/counterparties.table.actions";
-import { getOrganizationMembers } from "@/app/actions/tables/organizations.table.actions";
+import { getOrganizationMembers } from "@/app/actions/tables/organization-members.table.actions";
 import { ensureDefaultTransactionModesForUser } from "@/app/actions/tables/transaction-modes.table.actions";
 import { buildBudgetAllocationSummaries } from "@/app/lib/budget-utils";
 import { getBudgetMonthBounds, isValidBudgetMonth } from "@/app/lib/budget-month";
@@ -103,7 +103,7 @@ export async function getOrganizationFinanceData(): Promise<OrganizationFinanceD
     getBudgetsByOrg(currentUser.orgId),
     getOrganizationMembers(currentUser.orgId),
   ]);
-  const transactionModes = await ensureDefaultTransactionModesForUser(currentUser.id);
+  const transactionModes = await ensureDefaultTransactionModesForUser(currentUser.orgId, currentUser.id);
   const allocationSummaries = buildBudgetAllocationSummaries(budgets);
   const visibleBudgets = budgets.filter(
     (budget) => budget.scope === "family" || (budget.scope === "personal" && budget.userId === currentUser.id)

@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/app/lib/auth";
+import { requireUser, setActiveOrgCookie } from "@/app/lib/auth";
 import { ROUTES } from "@/app/lib/constants";
 import { ROLES } from "@/app/lib/roles";
 import { buildInviteCode } from "@/app/lib/invite-code";
@@ -11,7 +11,12 @@ import {
   createOrganizationRecord,
   getOrganizationByInviteCode,
 } from "@/app/actions/tables/organizations.table.actions";
-import { updateUserById } from "@/app/actions/tables/users.table.actions";
+import {
+  addOrganizationMember,
+  getOrganizationMembership,
+  getOrganizationsForUser,
+  setDefaultOrganizationForUser,
+} from "@/app/actions/tables/organization-members.table.actions";
 import type { OnboardingActionState } from "@/app/actions/auth-roles/onboarding.types";
 
 const joinOrganizationSchema = z.object({
@@ -20,6 +25,10 @@ const joinOrganizationSchema = z.object({
 
 const createOrganizationSchema = z.object({
   name: z.string().trim().min(2, "Organization name is required").max(120),
+});
+
+const orgIdSchema = z.object({
+  orgId: z.coerce.number().int().positive(),
 });
 
 export async function joinOrganizationByInviteCodeAction(
@@ -46,17 +55,20 @@ export async function joinOrganizationByInviteCodeAction(
     };
   }
 
-  if (currentUser.orgId && currentUser.orgId !== organization.id) {
-    return {
-      error: "You already belong to another organization",
-    };
-  }
+  const existingMembership = await getOrganizationMembership(organization.id, currentUser.id);
 
-  if (currentUser.orgId !== organization.id) {
-    await updateUserById(currentUser.id, { orgId: organization.id });
+  if (!existingMembership) {
+    const memberships = await getOrganizationsForUser(currentUser.id);
+    await addOrganizationMember({
+      orgId: organization.id,
+      userId: currentUser.id,
+      role: ROLES.USER,
+      isDefault: memberships.length === 0,
+    });
     revalidatePath(ROUTES.DASHBOARD, "layout");
   }
 
+  await setActiveOrgCookie(organization.id);
   redirect(ROUTES.TRANSACTIONS);
 }
 
@@ -75,11 +87,7 @@ export async function createOrganizationFromOnboardingAction(
     };
   }
 
-  if (currentUser.orgId) {
-    return {
-      error: "You already belong to an organization",
-    };
-  }
+  const memberships = await getOrganizationsForUser(currentUser.id);
 
   const organization = await createOrganizationRecord({
     name: parsed.data.name,
@@ -93,11 +101,57 @@ export async function createOrganizationFromOnboardingAction(
     };
   }
 
-  await updateUserById(currentUser.id, {
+  await addOrganizationMember({
     orgId: organization.id,
+    userId: currentUser.id,
     role: ROLES.ADMIN,
+    isDefault: memberships.length === 0,
   });
+  await setActiveOrgCookie(organization.id);
   revalidatePath(ROUTES.DASHBOARD, "layout");
 
   redirect(ROUTES.TRANSACTIONS);
+}
+
+/**
+ * Switches the active org for this browser session to one the user is already
+ * a member of (the "Open an organization" list).
+ */
+export async function openOrganizationAction(formData: FormData) {
+  const currentUser = await requireUser();
+  const parsed = orgIdSchema.safeParse({ orgId: formData.get("orgId") });
+
+  if (!parsed.success) {
+    throw new Error("Organization is required");
+  }
+
+  const membership = await getOrganizationMembership(parsed.data.orgId, currentUser.id);
+  if (!membership) {
+    throw new Error("You are not a member of this organization");
+  }
+
+  await setActiveOrgCookie(parsed.data.orgId);
+  revalidatePath(ROUTES.DASHBOARD, "layout");
+  redirect(ROUTES.TRANSACTIONS);
+}
+
+/**
+ * Sets the user's durable, cross-device "home" org — used as the landing org
+ * whenever this browser has no active-org cookie yet.
+ */
+export async function setDefaultOrganizationAction(formData: FormData) {
+  const currentUser = await requireUser();
+  const parsed = orgIdSchema.safeParse({ orgId: formData.get("orgId") });
+
+  if (!parsed.success) {
+    throw new Error("Organization is required");
+  }
+
+  const membership = await getOrganizationMembership(parsed.data.orgId, currentUser.id);
+  if (!membership) {
+    throw new Error("You are not a member of this organization");
+  }
+
+  await setDefaultOrganizationForUser(currentUser.id, parsed.data.orgId);
+  revalidatePath(ROUTES.DASHBOARD, "layout");
 }

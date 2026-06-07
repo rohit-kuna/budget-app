@@ -103,6 +103,21 @@ export function OrganizationSettings({ data }: OrganizationSettingsProps) {
           </Button>
         </CardContent>
       </Card>
+
+      <Card className="py-2 lg:col-span-2">
+        <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
+          <CardTitle className="text-2xl tracking-tight">Switch organization</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-6 sm:px-8 sm:pb-8">
+          <p className="text-sm text-muted-foreground">
+            Belong to more than one organization? Open a different workspace, join one with an
+            invite code, or create a new organization.
+          </p>
+          <Button asChild className="mt-4 w-full sm:w-auto">
+            <Link href={ROUTES.SWITCH_ORGANIZATION}>Switch organization</Link>
+          </Button>
+        </CardContent>
+      </Card>
     </section>
   );
 }

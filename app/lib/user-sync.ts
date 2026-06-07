@@ -3,7 +3,6 @@ import { cache } from "react";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { ROLES } from "@/app/lib/roles";
 
 /**
  * Ensures the logged-in Clerk user exists in DB.
@@ -33,7 +32,6 @@ export const syncUserWithDb = cache(async (clerkUser?: ClerkUser | null) => {
       clerkUserId: resolvedClerkUserId,
       email,
       name,
-      role: ROLES.USER,
     })
     .onConflictDoNothing({ target: users.clerkUserId });
 

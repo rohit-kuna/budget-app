@@ -1,7 +1,8 @@
 "use server";
 
 import { requireUser } from "@/app/lib/auth";
-import { getOrganizationById, getOrganizationMembers } from "@/app/actions/tables/organizations.table.actions";
+import { getOrganizationById } from "@/app/actions/tables/organizations.table.actions";
+import { getOrganizationMembers } from "@/app/actions/tables/organization-members.table.actions";
 import { getCategoriesByOrg } from "@/app/actions/tables/categories.table.actions";
 import { getBudgetsByOrg } from "@/app/actions/tables/budgets.table.actions";
 import { getExpensesByOrg } from "@/app/actions/tables/expenses.table.actions";

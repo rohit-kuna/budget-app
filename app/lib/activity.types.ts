@@ -1,5 +1,6 @@
 import type { CategoryRecordDto, BudgetRecordDto } from "@/app/lib/finance.types";
 import type { ExpenseRecordDto } from "@/app/lib/expense.types";
+import type { AppRole } from "@/app/lib/roles";
 
 export type ActivityMemberDto = {
   id: string;
@@ -22,7 +23,7 @@ export type ActivityDashboardDataDto = {
   expenses: ExpenseRecordDto[];
   currentUser: {
     id: string;
-    role: "ADMIN" | "USER";
+    role: AppRole | null;
     orgId: number | null;
   };
 };

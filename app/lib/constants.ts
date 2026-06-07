@@ -6,6 +6,7 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
   ACTIVITY: "/activity",
   ORGANIZATION: "/organization",
+  SWITCH_ORGANIZATION: "/switch-organization",
   USERS: "/users",
   CATEGORIES: "/categories",
   COUNTERPARTIES: "/counterparties",
