@@ -7,11 +7,15 @@ import type { TransactionModeRecordDto } from "@/app/lib/finance.types";
 
 const transactionModeOwner = aliasedTable(users, "transactionModeOwner");
 
-function toTransactionModeDto(
-  record: typeof transactionModes.$inferSelect & {
-    userName: string;
-  }
-): TransactionModeRecordDto {
+function toTransactionModeDto(record: {
+  id: number;
+  name: string;
+  userId: string;
+  userName: string;
+  isDefault: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}): TransactionModeRecordDto {
   return {
     id: record.id,
     name: record.name,
@@ -23,7 +27,7 @@ function toTransactionModeDto(
   };
 }
 
-export async function getTransactionModesByUser(userId: string): Promise<TransactionModeRecordDto[]> {
+export async function getTransactionModesByUser(orgId: number, userId: string): Promise<TransactionModeRecordDto[]> {
   const records = await db
     .select({
       id: transactionModes.id,
@@ -36,20 +40,20 @@ export async function getTransactionModesByUser(userId: string): Promise<Transac
     })
     .from(transactionModes)
     .innerJoin(transactionModeOwner, eq(transactionModeOwner.id, transactionModes.userId))
-    .where(eq(transactionModes.userId, userId))
+    .where(and(eq(transactionModes.orgId, orgId), eq(transactionModes.userId, userId)))
     .orderBy(desc(transactionModes.isDefault), asc(transactionModes.createdAt), desc(transactionModes.id));
 
   return records.map(toTransactionModeDto);
 }
 
-export async function ensureDefaultTransactionModesForUser(ownerUserId: string) {
-  const existingModes = await getTransactionModesByUser(ownerUserId);
+export async function ensureDefaultTransactionModesForUser(orgId: number, ownerUserId: string) {
+  const existingModes = await getTransactionModesByUser(orgId, ownerUserId);
   if (existingModes.length) {
     if (!existingModes.some((mode) => mode.isDefault)) {
       const fallbackMode = existingModes[0];
       if (fallbackMode) {
-        await setDefaultTransactionModeForUser(ownerUserId, fallbackMode.id);
-        return getTransactionModesByUser(ownerUserId);
+        await setDefaultTransactionModeForUser(orgId, ownerUserId, fallbackMode.id);
+        return getTransactionModesByUser(orgId, ownerUserId);
       }
     }
 
@@ -57,18 +61,24 @@ export async function ensureDefaultTransactionModesForUser(ownerUserId: string) 
   }
 
   await db.insert(transactionModes).values([
-    { userId: ownerUserId, name: "Online", isDefault: true },
-    { userId: ownerUserId, name: "Cash", isDefault: false },
+    { orgId, userId: ownerUserId, name: "Online", isDefault: true },
+    { orgId, userId: ownerUserId, name: "Cash", isDefault: false },
   ]);
 
-  return getTransactionModesByUser(ownerUserId);
+  return getTransactionModesByUser(orgId, ownerUserId);
 }
 
-export async function getDefaultTransactionModeByUser(userId: string) {
+export async function getDefaultTransactionModeByUser(orgId: number, userId: string) {
   const [record] = await db
     .select()
     .from(transactionModes)
-    .where(and(eq(transactionModes.userId, userId), eq(transactionModes.isDefault, true)))
+    .where(
+      and(
+        eq(transactionModes.orgId, orgId),
+        eq(transactionModes.userId, userId),
+        eq(transactionModes.isDefault, true)
+      )
+    )
     .limit(1);
 
   return record ?? null;
@@ -85,6 +95,7 @@ export async function getTransactionModeById(id: number) {
 }
 
 export async function createTransactionModeRecord(input: {
+  orgId: number;
   userId: string;
   name: string;
   isDefault?: boolean;
@@ -115,17 +126,23 @@ export async function deleteTransactionModeRecord(id: number) {
   return record ?? null;
 }
 
-export async function setDefaultTransactionModeForUser(userId: string, transactionModeId: number) {
+export async function setDefaultTransactionModeForUser(orgId: number, userId: string, transactionModeId: number) {
   const result = await db.transaction(async (tx) => {
     await tx
       .update(transactionModes)
       .set({ isDefault: false, updatedAt: new Date() })
-      .where(eq(transactionModes.userId, userId));
+      .where(and(eq(transactionModes.orgId, orgId), eq(transactionModes.userId, userId)));
 
     const [updated] = await tx
       .update(transactionModes)
       .set({ isDefault: true, updatedAt: new Date() })
-      .where(and(eq(transactionModes.id, transactionModeId), eq(transactionModes.userId, userId)))
+      .where(
+        and(
+          eq(transactionModes.id, transactionModeId),
+          eq(transactionModes.orgId, orgId),
+          eq(transactionModes.userId, userId)
+        )
+      )
       .returning();
 
     return updated ?? null;

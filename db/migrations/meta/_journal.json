@@ -50,6 +50,20 @@
       "when": 1780758253087,
       "tag": "0008_aromatic_joseph",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780816877633,
+      "tag": "0009_first_veda",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780820849543,
+      "tag": "0010_fantastic_chronomancer",
+      "breakpoints": true
     }
   ]
 }

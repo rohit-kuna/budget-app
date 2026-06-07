@@ -296,7 +296,7 @@ export async function getManageImportExportData(): Promise<ManageImportExportDat
     getCounterpartiesByOrg(orgId),
   ]);
 
-  const transactionModes = await getTransactionModesByUser(currentUser.id);
+  const transactionModes = await getTransactionModesByUser(orgId, currentUser.id);
 
   return {
     scope: "user",
@@ -408,7 +408,7 @@ async function importUserScopedExpensesFromWorkbookAction(
     getCategoriesByOrg(orgId),
     getCounterpartiesByOrg(orgId),
     getExpensesByOrg(orgId),
-    getTransactionModesByUser(currentUser.id),
+    getTransactionModesByUser(orgId, currentUser.id),
   ]);
 
   const existingUserExpenses = existingExpenses.filter((expense) => expense.userId === currentUser.id);

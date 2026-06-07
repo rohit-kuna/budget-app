@@ -1,5 +1,6 @@
 import type { CategoryRecordDto, CounterpartyRecordDto, TransactionModeRecordDto } from "@/app/lib/finance.types";
 import type { OrganizationMemberRecord } from "@/app/lib/admin-dashboard.types";
+import type { AppRole } from "@/app/lib/roles";
 
 export const IMPORT_WORKBOOK_FIELDS = [
   "amount",
@@ -110,7 +111,7 @@ export type ManageImportExportDataDto = {
     id: string;
     name: string;
     email: string;
-    role: "ADMIN" | "USER";
+    role: AppRole | null;
     orgId: number | null;
   };
 };

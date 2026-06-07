@@ -1,4 +1,5 @@
 import type { BudgetScope, CategoryType } from "@/db/schema";
+import type { AppRole } from "@/app/lib/roles";
 
 export type CategoryRecordDto = {
   id: number;
@@ -83,7 +84,7 @@ export type OrganizationFinanceDataDto = {
   allocationSummaries: BudgetAllocationSummaryDto[];
   currentUser: {
     id: string;
-    role: "ADMIN" | "USER";
+    role: AppRole | null;
     orgId: number | null;
   };
 };

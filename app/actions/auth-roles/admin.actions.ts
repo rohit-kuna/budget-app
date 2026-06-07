@@ -3,19 +3,25 @@
 import { z } from "zod";
 import { notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireAdmin, requireUser } from "@/app/lib/auth";
+import { requireAdmin, requireUser, setActiveOrgCookie } from "@/app/lib/auth";
 import { ROUTES } from "@/app/lib/constants";
 import { ROLES } from "@/app/lib/roles";
-import { getUserById, updateUserById } from "@/app/actions/tables/users.table.actions";
+import { getUserById } from "@/app/actions/tables/users.table.actions";
 import {
   createOrganizationRecord,
-  getOrganizationAdminCount,
   getOrganizationById,
   getOrganizationByInviteCode,
-  getOrganizationMembers,
   updateOrganizationInviteCode,
   updateOrganizationName,
 } from "@/app/actions/tables/organizations.table.actions";
+import {
+  addOrganizationMember,
+  getOrganizationAdminCount,
+  getOrganizationMembers,
+  getOrganizationMembership,
+  getOrganizationsForUser,
+  updateOrganizationMemberRole,
+} from "@/app/actions/tables/organization-members.table.actions";
 import type { AdminDashboardData } from "@/app/lib/admin-dashboard.types";
 import { buildInviteCode } from "@/app/lib/invite-code";
 import { getOrganizationInviteLink } from "@/app/lib/urls";
@@ -68,6 +74,8 @@ export async function createOrganizationAction(formData: FormData) {
     return;
   }
 
+  const memberships = await getOrganizationsForUser(currentUser.id);
+
   const organization = await createOrganizationRecord({
     name: parsed.data.name,
     inviteCode: buildInviteCode(),
@@ -78,10 +86,13 @@ export async function createOrganizationAction(formData: FormData) {
     throw new Error("Unable to create organization");
   }
 
-  await updateUserById(currentUser.id, {
+  await addOrganizationMember({
     orgId: organization.id,
+    userId: currentUser.id,
     role: ROLES.ADMIN,
+    isDefault: memberships.length === 0,
   });
+  await setActiveOrgCookie(organization.id);
   revalidatePath(ROUTES.DASHBOARD, "layout");
 }
 
@@ -142,25 +153,26 @@ export async function updateOrganizationMemberRoleAction(formData: FormData) {
 
   const targetUser = await getUserById(parsed.data.userId);
 
-  if (!targetUser || targetUser.orgId !== currentUser.orgId) {
+  if (!targetUser) {
     throw new Error("Member does not belong to your organization");
   }
 
-  if (targetUser.role === ROLES.ADMIN && parsed.data.role === ROLES.USER) {
+  const targetMembership = await getOrganizationMembership(currentUser.orgId, targetUser.id);
+
+  if (!targetMembership) {
+    throw new Error("Member does not belong to your organization");
+  }
+
+  if (targetMembership.role === ROLES.ADMIN && parsed.data.role === ROLES.USER) {
     const adminCount = await getOrganizationAdminCount(currentUser.orgId);
     if (adminCount <= 1) {
       throw new Error("Keep at least one admin in the organization");
     }
   }
 
-  await updateUserById(targetUser.id, { role: parsed.data.role });
+  await updateOrganizationMemberRole(currentUser.orgId, targetUser.id, parsed.data.role);
   revalidatePath(ROUTES.USERS, "page");
   revalidatePath(ROUTES.ORGANIZATION, "page");
-}
-
-export async function promoteUserToAdmin(userId: string) {
-  await requireAdmin();
-  await updateUserById(userId, { role: ROLES.ADMIN });
 }
 
 export async function acceptOrganizationInvite(inviteCode: string) {
@@ -171,41 +183,23 @@ export async function acceptOrganizationInvite(inviteCode: string) {
     notFound();
   }
 
-  if (currentUser.orgId && currentUser.orgId !== organization.id) {
-    throw new Error("You are already part of another organization");
+  const existingMembership = await getOrganizationMembership(organization.id, currentUser.id);
+
+  if (!existingMembership) {
+    const memberships = await getOrganizationsForUser(currentUser.id);
+    await addOrganizationMember({
+      orgId: organization.id,
+      userId: currentUser.id,
+      role: ROLES.USER,
+      isDefault: memberships.length === 0,
+    });
+    revalidatePath(ROUTES.DASHBOARD, "layout");
   }
 
-  if (currentUser.orgId === organization.id) {
-    return {
-      success: true,
-      organization,
-    };
-  }
-
-  await updateUserById(currentUser.id, { orgId: organization.id });
+  await setActiveOrgCookie(organization.id);
 
   return {
     success: true,
     organization,
   };
-}
-
-export async function getCurrentOrganizationForAdmin() {
-  const currentUser = await requireAdmin();
-
-  if (!currentUser.orgId) {
-    return null;
-  }
-
-  return getOrganizationById(currentUser.orgId);
-}
-
-export async function getCurrentOrganizationMembersForAdmin() {
-  const currentUser = await requireAdmin();
-
-  if (!currentUser.orgId) {
-    return [];
-  }
-
-  return getOrganizationMembers(currentUser.orgId);
 }

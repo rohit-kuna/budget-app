@@ -5,6 +5,7 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  primaryKey,
   serial,
   integer,
   smallint,
@@ -41,13 +42,31 @@ export const users = pgTable(
     clerkUserId: varchar("clerk_user_id", { length: 255 }).notNull().unique(),
     email: varchar("email", { length: 255 }).notNull(),
     name: varchar("name", { length: 255 }).notNull(),
-    role: varchar("role", { length: 20 }).notNull().$type<AppRole>(),
-    orgId: integer("org_id").references(() => organizations.id),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     clerkUserIdx: index("users_clerk_user_id_idx").on(table.clerkUserId),
+  })
+);
+
+export const organizationMembers = pgTable(
+  "organization_members",
+  {
+    orgId: integer("org_id").notNull().references(() => organizations.id),
+    userId: uuid("user_id").notNull().references(() => users.id),
+    role: varchar("role", { length: 20 }).notNull().$type<AppRole>(),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
+    isActive: boolean("is_active").notNull().default(true),
+    isDefault: boolean("is_default").notNull().default(false),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.orgId, table.userId] }),
+    userIdx: index("organization_members_user_id_idx").on(table.userId),
+    userDefaultUnique: uniqueIndex("organization_members_user_default_unique")
+      .on(table.userId)
+      .where(sql`${table.isDefault}`),
   })
 );
 
@@ -88,14 +107,15 @@ export const transactionModes = pgTable(
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
     userId: uuid("user_id").notNull().references(() => users.id),
+    orgId: integer("org_id").notNull().references(() => organizations.id),
     isDefault: boolean("is_default").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    transactionModeUserNameUnique: unique("transaction_modes_user_name_unique").on(table.userId, table.name),
-    transactionModeUserDefaultUnique: uniqueIndex("transaction_modes_user_default_unique")
-      .on(table.userId)
+    transactionModeOrgUserNameUnique: unique("transaction_modes_org_user_name_unique").on(table.orgId, table.userId, table.name),
+    transactionModeOrgUserDefaultUnique: uniqueIndex("transaction_modes_org_user_default_unique")
+      .on(table.orgId, table.userId)
       .where(sql`${table.isDefault}`),
     transactionModeUserIdx: index("transaction_modes_user_id_idx").on(table.userId),
   })

@@ -4,6 +4,7 @@ import { getCurrentDbUser } from "@/app/lib/auth";
 import { ROUTES } from "@/app/lib/constants";
 import { ROLES } from "@/app/lib/roles";
 import { getOrganizationById } from "@/app/actions/tables/organizations.table.actions";
+import { getOrganizationsForUser } from "@/app/actions/tables/organization-members.table.actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { OnboardingDashboard } from "@/components/features/onboarding/onboarding-dashboard";
@@ -82,6 +83,8 @@ export default async function DashboardPage() {
   }
 
   if (!user.orgId) {
+    const organizations = await getOrganizationsForUser(user.id);
+
     return (
       <main className="mx-auto w-full max-w-7xl p-4 sm:p-6">
         <div className="mb-6 space-y-2">
@@ -96,7 +99,7 @@ export default async function DashboardPage() {
             its admin.
           </p>
         </div>
-        <OnboardingDashboard />
+        <OnboardingDashboard organizations={organizations} />
       </main>
     );
   }

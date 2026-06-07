@@ -135,7 +135,7 @@ export async function getExpensesDashboardData(): Promise<ExpensesDashboardDataD
     getCounterpartiesByOrg(currentUser.orgId),
     getExpensesByOrg(currentUser.orgId),
   ]);
-  const transactionModes = await ensureDefaultTransactionModesForUser(currentUser.id);
+  const transactionModes = await ensureDefaultTransactionModesForUser(currentUser.orgId, currentUser.id);
   const visibleExpenses = currentUser.role === "ADMIN"
     ? expenses
     : expenses.filter((expense) => expense.userId === currentUser.id);
@@ -180,7 +180,7 @@ export async function getTransfersDashboardData(): Promise<TransferDashboardData
     getCounterpartiesByOrg(currentUser.orgId),
     getExpensesByOrg(currentUser.orgId),
   ]);
-  const transactionModes = await ensureDefaultTransactionModesForUser(currentUser.id);
+  const transactionModes = await ensureDefaultTransactionModesForUser(currentUser.orgId, currentUser.id);
   const visibleExpenses =
     currentUser.role === "ADMIN"
       ? expenses
@@ -208,7 +208,7 @@ export async function createExpenseAction(
 ): Promise<FinanceActionState> {
   const currentUser = await requireUser();
   const orgId = assertOrgId(currentUser);
-  await ensureDefaultTransactionModesForUser(currentUser.id);
+  await ensureDefaultTransactionModesForUser(orgId, currentUser.id);
 
   const parsed = expenseSchema.safeParse({
     categoryId: formData.get("categoryId"),
@@ -265,7 +265,7 @@ export async function updateExpenseAction(
 ): Promise<FinanceActionState> {
   const currentUser = await requireUser();
   const orgId = assertOrgId(currentUser);
-  await ensureDefaultTransactionModesForUser(currentUser.id);
+  await ensureDefaultTransactionModesForUser(orgId, currentUser.id);
 
   const parsed = expenseSchema.safeParse({
     categoryId: formData.get("categoryId"),

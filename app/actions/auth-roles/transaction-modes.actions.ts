@@ -15,6 +15,14 @@ import {
 } from "@/app/actions/tables/transaction-modes.table.actions";
 import type { FinanceActionState } from "@/app/actions/auth-roles/finance.types";
 
+function assertOrgId(currentUser: Awaited<ReturnType<typeof requireUser>>) {
+  if (!currentUser.orgId) {
+    throw new Error("Create or join an organization first");
+  }
+
+  return currentUser.orgId;
+}
+
 const transactionModeSchema = z.object({
   name: z.string().trim().min(2, "Transaction mode name is required").max(255),
 });
@@ -25,7 +33,8 @@ const transactionModeIdSchema = z.object({
 
 export async function getTransactionModesData() {
   const currentUser = await requireUser();
-  const transactionModes = await ensureDefaultTransactionModesForUser(currentUser.id);
+  const orgId = assertOrgId(currentUser);
+  const transactionModes = await ensureDefaultTransactionModesForUser(orgId, currentUser.id);
 
   return {
     transactionModes,
@@ -42,6 +51,7 @@ export async function createTransactionModeAction(
   formData: FormData
 ): Promise<FinanceActionState> {
   const currentUser = await requireUser();
+  const orgId = assertOrgId(currentUser);
   const parsed = transactionModeSchema.safeParse({
     name: formData.get("name"),
   });
@@ -50,13 +60,14 @@ export async function createTransactionModeAction(
     return { error: parsed.error.issues[0]?.message ?? "Unable to create transaction mode" };
   }
 
-  const existingModes = await getTransactionModesByUser(currentUser.id);
+  const existingModes = await getTransactionModesByUser(orgId, currentUser.id);
 
   if (existingModes.some((mode) => mode.name.toLowerCase() === parsed.data.name.toLowerCase())) {
     return { error: "Transaction mode already exists" };
   }
 
   await createTransactionModeRecord({
+    orgId,
     userId: currentUser.id,
     name: parsed.data.name,
     isDefault: existingModes.length === 0,
@@ -70,6 +81,7 @@ export async function updateTransactionModeAction(
   formData: FormData
 ): Promise<FinanceActionState> {
   const currentUser = await requireUser();
+  const orgId = assertOrgId(currentUser);
   const parsed = transactionModeSchema.safeParse({
     name: formData.get("name"),
   });
@@ -95,7 +107,7 @@ export async function updateTransactionModeAction(
     return { error: "You can only edit your own transaction modes" };
   }
 
-  const existingModes = await getTransactionModesByUser(currentUser.id);
+  const existingModes = await getTransactionModesByUser(orgId, currentUser.id);
   if (
     existingModes.some(
       (existing) =>
@@ -119,6 +131,7 @@ export async function setDefaultTransactionModeAction(
   formData: FormData
 ): Promise<FinanceActionState> {
   const currentUser = await requireUser();
+  const orgId = assertOrgId(currentUser);
   const transactionModeIdResult = transactionModeIdSchema.safeParse({
     transactionModeId: formData.get("transactionModeId"),
   });
@@ -137,7 +150,7 @@ export async function setDefaultTransactionModeAction(
     return { error: "You can only update your own transaction modes" };
   }
 
-  const updated = await setDefaultTransactionModeForUser(currentUser.id, transactionMode.id);
+  const updated = await setDefaultTransactionModeForUser(orgId, currentUser.id, transactionMode.id);
 
   if (!updated) {
     return { error: "Unable to set default transaction mode" };
@@ -151,6 +164,7 @@ export async function deleteTransactionModeAction(
   formData: FormData
 ): Promise<FinanceActionState> {
   const currentUser = await requireUser();
+  const orgId = assertOrgId(currentUser);
   const transactionModeIdResult = transactionModeIdSchema.safeParse({
     transactionModeId: formData.get("transactionModeId"),
   });
@@ -172,9 +186,9 @@ export async function deleteTransactionModeAction(
   await deleteTransactionModeRecord(transactionMode.id);
 
   if (transactionMode.isDefault) {
-    const remainingModes = await getTransactionModesByUser(currentUser.id);
+    const remainingModes = await getTransactionModesByUser(orgId, currentUser.id);
     if (remainingModes.length && !remainingModes.some((mode) => mode.isDefault)) {
-      await setDefaultTransactionModeForUser(currentUser.id, remainingModes[0].id);
+      await setDefaultTransactionModeForUser(orgId, currentUser.id, remainingModes[0].id);
     }
   }
 

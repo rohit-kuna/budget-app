@@ -1,11 +1,10 @@
 "use server";
 
-import { desc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { cache } from "react";
-import type { OrganizationMemberRecord, OrganizationRecord } from "@/app/lib/admin-dashboard.types";
+import type { OrganizationRecord } from "@/app/lib/admin-dashboard.types";
 import { db } from "@/db";
-import { organizations, users } from "@/db/schema";
-import { ROLES } from "@/app/lib/roles";
+import { organizations } from "@/db/schema";
 
 export async function createOrganizationRecord(input: {
   name: string;
@@ -60,33 +59,4 @@ export async function updateOrganizationName(id: number, name: string) {
     .returning();
 
   return organization ?? null;
-}
-
-export async function getOrganizationMembers(orgId: number): Promise<OrganizationMemberRecord[]> {
-  return db
-    .select({
-      id: users.id,
-      clerkUserId: users.clerkUserId,
-      email: users.email,
-      name: users.name,
-      role: users.role,
-      orgId: users.orgId,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
-    })
-    .from(users)
-    .where(eq(users.orgId, orgId))
-    .orderBy(desc(users.createdAt));
-}
-
-export async function getOrganizationAdminCount(orgId: number) {
-  const records = await db
-    .select({
-      id: users.id,
-      role: users.role,
-    })
-    .from(users)
-    .where(eq(users.orgId, orgId));
-
-  return records.filter((record) => record.role === ROLES.ADMIN).length;
 }
