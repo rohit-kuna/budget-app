@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { acceptOrganizationInvite } from "@/app/actions/auth-roles/admin.actions";
 import { getCurrentDbUser } from "@/app/lib/auth";
 import { getOrganizationByInviteCode } from "@/app/actions/tables/organizations.table.actions";
 import { ROUTES } from "@/app/lib/constants";
@@ -24,8 +23,7 @@ export default async function JoinPage({ params }: JoinPageProps) {
   const currentUser = await getCurrentDbUser();
 
   if (currentUser) {
-    await acceptOrganizationInvite(inviteCode);
-    redirect(ROUTES.TRANSACTIONS);
+    redirect(`${ROUTES.JOIN}/${inviteCode}/accept`);
   }
 
   const redirectUrl = `${ROUTES.JOIN}/${inviteCode}`;
