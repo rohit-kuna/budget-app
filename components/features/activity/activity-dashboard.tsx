@@ -347,7 +347,7 @@ function CategoryGroupFilter({
   );
 }
 
-function ExpenseActivityChart({
+export function ExpenseActivityChart({
   expenses,
   monthStart,
   monthEnd,

@@ -49,6 +49,7 @@ type HeaderNavConfig = {
 };
 
 const adminTopNavItems: HeaderNavItem[] = [
+  { label: "Transactions", href: ROUTES.TRANSACTIONS },
   { label: "Activity", href: ROUTES.ACTIVITY },
   { label: "Budgets", href: ROUTES.BUDGETS },
 ];
@@ -66,6 +67,7 @@ const adminSettingsItems: HeaderNavItem[] = [
 ];
 
 const userTopNavItems: HeaderNavItem[] = [
+  { label: "Transactions", href: ROUTES.TRANSACTIONS },
   { label: "Activity", href: ROUTES.ACTIVITY },
   { label: "Budgets", href: ROUTES.BUDGETS },
 ];
@@ -134,7 +136,7 @@ export function AuthHeader({
 }: AuthHeaderProps) {
   const { signOut } = useClerk();
   const { topItems, settingsItems } = getNavConfig(role, hasOrganization);
-  const logoHref = hasOrganization ? ROUTES.TRANSACTIONS : ROUTES.DASHBOARD;
+  const logoHref = ROUTES.DASHBOARD;
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">

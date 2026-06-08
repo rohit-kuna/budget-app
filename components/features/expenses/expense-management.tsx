@@ -282,7 +282,7 @@ function SortableHeader({
   );
 }
 
-function ExpenseFormCard({
+export function ExpenseFormCard({
   categories,
   counterparties,
   transactionModes,
@@ -297,7 +297,7 @@ function ExpenseFormCard({
   tags: TagRecordDto[];
   editingExpense: ExpenseRecordDto | null;
   recentCategoryId: number | null;
-  onCancelEdit: () => void;
+  onCancelEdit?: () => void;
 }) {
   const [createState, createAction, createPending] = useActionState(createExpenseAction, financeInitialState);
   const [updateState, updateAction, updatePending] = useActionState(updateExpenseAction, financeInitialState);
