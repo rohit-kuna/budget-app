@@ -1,5 +1,6 @@
 import type {
   CategoryRecordDto,
+  CategoryTagRecordDto,
   CounterpartyRecordDto,
   TagRecordDto,
   TransactionModeRecordDto,
@@ -63,6 +64,7 @@ export type ExpensesDashboardDataDto = {
   counterparties: CounterpartyRecordDto[];
   transactionModes: TransactionModeRecordDto[];
   tags: TagRecordDto[];
+  categoryTags: CategoryTagRecordDto[];
   expenses: ExpenseRecordDto[];
   currentUser: {
     id: string;

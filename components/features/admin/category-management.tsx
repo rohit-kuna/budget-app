@@ -6,13 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { CategoryRecordDto } from "@/app/lib/finance.types";
+import type { CategoryRecordDto, CategoryTagRecordDto, TagRecordDto } from "@/app/lib/finance.types";
 import { financeInitialState } from "@/app/actions/auth-roles/finance.types";
 import {
   createCategoryAction,
   deleteCategoryAction,
   updateCategoryAction,
+  updateCategoryTagsAction,
 } from "@/app/actions/auth-roles/organization-finance.actions";
+import { TagMultiSelect } from "@/components/features/expenses/tag-multi-select";
 
 function ActionError({ message }: { message: string | null }) {
   if (!message) return null;
@@ -47,7 +49,15 @@ function CategoryTypeSelect({
   );
 }
 
-function CategoryRow({ category }: { category: CategoryRecordDto }) {
+function CategoryRow({
+  category,
+  tags,
+  categoryTags,
+}: {
+  category: CategoryRecordDto;
+  tags: TagRecordDto[];
+  categoryTags: CategoryTagRecordDto[];
+}) {
   const [updateState, updateAction, updatePending] = useActionState(
     updateCategoryAction,
     financeInitialState
@@ -56,6 +66,14 @@ function CategoryRow({ category }: { category: CategoryRecordDto }) {
     deleteCategoryAction,
     financeInitialState
   );
+  const [tagsState, tagsAction, tagsPending] = useActionState(
+    updateCategoryTagsAction,
+    financeInitialState
+  );
+
+  const selectedTagIds = categoryTags
+    .filter((entry) => entry.categoryId === category.id)
+    .map((entry) => entry.tagId);
 
   return (
     <div className="rounded-lg border bg-muted/20 p-4">
@@ -98,14 +116,34 @@ function CategoryRow({ category }: { category: CategoryRecordDto }) {
           {deletePending ? "Deleting..." : "Delete"}
         </Button>
       </form>
+      <form action={tagsAction} className="mt-3 space-y-2">
+        <input type="hidden" name="categoryId" value={category.id} />
+        <Label htmlFor={`category-tags-${category.id}`}>Tags</Label>
+        <TagMultiSelect
+          key={selectedTagIds.join(",")}
+          name="tagIds"
+          tags={tags}
+          categoryTags={categoryTags}
+          categoryId={category.id}
+          defaultSelectedIds={selectedTagIds}
+        />
+        <ActionError message={tagsState.error} />
+        <Button type="submit" variant="outline" disabled={tagsPending}>
+          {tagsPending ? "Saving..." : "Save tags"}
+        </Button>
+      </form>
     </div>
   );
 }
 
 export function CategoryManagement({
   categories,
+  tags,
+  categoryTags,
 }: {
   categories: CategoryRecordDto[];
+  tags: TagRecordDto[];
+  categoryTags: CategoryTagRecordDto[];
 }) {
   const [createState, createAction, createPending] = useActionState(
     createCategoryAction,
@@ -147,7 +185,12 @@ export function CategoryManagement({
           {categories.length ? (
             <div className="grid gap-3">
               {categories.map((category) => (
-                <CategoryRow key={category.id} category={category} />
+                <CategoryRow
+                  key={category.id}
+                  category={category}
+                  tags={tags}
+                  categoryTags={categoryTags}
+                />
               ))}
             </div>
           ) : (

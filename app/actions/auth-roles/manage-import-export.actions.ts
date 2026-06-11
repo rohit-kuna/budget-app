@@ -13,6 +13,7 @@ import { getTagsByOrg } from "@/app/actions/tables/tags.table.actions";
 import { getTransactionModesByUser } from "@/app/actions/tables/transaction-modes.table.actions";
 import { getOrganizationById } from "@/app/actions/tables/organizations.table.actions";
 import { getOrganizationMembers } from "@/app/actions/tables/organization-members.table.actions";
+import { incrementCategoryTagUsage } from "@/app/actions/tables/category-tags.table.actions";
 import type {
   ImportWorkbookField,
   ImportWorkbookPreview,
@@ -937,6 +938,7 @@ async function importUserScopedExpensesFromWorkbookAction(
             await tx.insert(transactionTags).values(
               tagIds.map((tagId) => ({ transactionId: insertedExpense.id, tagId }))
             );
+            await incrementCategoryTagUsage(tx, orgId, categoryId, tagIds);
           }
         } catch (error) {
           if (isDuplicateExpenseConstraintError(error)) {
@@ -1679,6 +1681,7 @@ async function importOrganizationScopedExpensesFromWorkbookAction(
             await tx.insert(transactionTags).values(
               tagIds.map((tagId) => ({ transactionId: insertedExpense.id, tagId }))
             );
+            await incrementCategoryTagUsage(tx, orgId, categoryId, tagIds);
           }
         } catch (error) {
           if (isDuplicateExpenseConstraintError(error)) {

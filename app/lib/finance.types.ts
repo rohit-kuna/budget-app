@@ -59,6 +59,12 @@ export type TagRecordDto = {
   updatedAt: string;
 };
 
+export type CategoryTagRecordDto = {
+  categoryId: number;
+  tagId: number;
+  usageCount: number;
+};
+
 export type TransactionModeRecordDto = {
   id: number;
   name: string;

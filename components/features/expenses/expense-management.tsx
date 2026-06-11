@@ -19,6 +19,7 @@ import {
 } from "@/app/actions/auth-roles/expense.actions";
 import type {
   CategoryRecordDto,
+  CategoryTagRecordDto,
   CounterpartyRecordDto,
   TagRecordDto,
   TransactionModeRecordDto,
@@ -287,6 +288,7 @@ export function ExpenseFormCard({
   counterparties,
   transactionModes,
   tags,
+  categoryTags,
   editingExpense,
   recentCategoryId,
   onCancelEdit,
@@ -295,6 +297,7 @@ export function ExpenseFormCard({
   counterparties: CounterpartyRecordDto[];
   transactionModes: TransactionModeRecordDto[];
   tags: TagRecordDto[];
+  categoryTags: CategoryTagRecordDto[];
   editingExpense: ExpenseRecordDto | null;
   recentCategoryId: number | null;
   onCancelEdit?: () => void;
@@ -416,6 +419,8 @@ export function ExpenseFormCard({
                   tags={tags}
                   name="tagIds"
                   defaultSelectedIds={editingExpense?.tagIds ?? []}
+                  categoryTags={categoryTags}
+                  categoryId={resolvedSelectedCategoryId}
                 />
               </div>
               <div>
@@ -926,6 +931,7 @@ export function ExpenseManagement({ data }: { data: ExpensesDashboardDataDto }) 
         counterparties={data.counterparties}
         transactionModes={data.transactionModes}
         tags={data.tags}
+        categoryTags={data.categoryTags}
         editingExpense={editingExpense}
         recentCategoryId={recentCategoryId}
         onCancelEdit={() => setEditingExpense(null)}
