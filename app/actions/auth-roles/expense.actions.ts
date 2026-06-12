@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { db } from "@/db";
 import { requireUser } from "@/app/lib/auth";
 import { ROUTES } from "@/app/lib/constants";
 import { getOrganizationById } from "@/app/actions/tables/organizations.table.actions";
@@ -19,6 +20,11 @@ import {
   getCounterpartyById,
 } from "@/app/actions/tables/counterparties.table.actions";
 import { getTagsByOrg } from "@/app/actions/tables/tags.table.actions";
+import {
+  decrementCategoryTagUsage,
+  getCategoryTagsByOrg,
+  incrementCategoryTagUsage,
+} from "@/app/actions/tables/category-tags.table.actions";
 import {
   ensureDefaultTransactionModesForUser,
   getTransactionModeById,
@@ -138,6 +144,7 @@ export async function getExpensesDashboardData(): Promise<ExpensesDashboardDataD
       counterparties: [],
       transactionModes: [],
       tags: [],
+      categoryTags: [],
       expenses: [],
       currentUser: {
         id: currentUser.id,
@@ -148,11 +155,12 @@ export async function getExpensesDashboardData(): Promise<ExpensesDashboardDataD
     };
   }
 
-  const [organization, categories, counterparties, tags, expenses] = await Promise.all([
+  const [organization, categories, counterparties, tags, categoryTags, expenses] = await Promise.all([
     getOrganizationById(currentUser.orgId),
     getCategoriesByOrg(currentUser.orgId),
     getCounterpartiesByOrg(currentUser.orgId),
     getTagsByOrg(currentUser.orgId),
+    getCategoryTagsByOrg(currentUser.orgId),
     getExpensesByOrg(currentUser.orgId),
   ]);
   const transactionModes = await ensureDefaultTransactionModesForUser(currentUser.orgId, currentUser.id);
@@ -166,6 +174,7 @@ export async function getExpensesDashboardData(): Promise<ExpensesDashboardDataD
     counterparties,
     transactionModes,
     tags,
+    categoryTags,
     expenses: visibleExpenses,
     currentUser: {
       id: currentUser.id,
@@ -285,6 +294,9 @@ export async function createExpenseAction(
 
   if (record) {
     await setTransactionTags(record.id, tagIds);
+    if (tagIds.length) {
+      await incrementCategoryTagUsage(db, orgId, parsed.data.categoryId, tagIds);
+    }
   }
 
   redirect(ROUTES.TRANSACTIONS);
@@ -363,6 +375,16 @@ export async function updateExpenseAction(
 
   await setTransactionTags(expense.id, tagIds);
 
+  if (expense.categoryId === parsed.data.categoryId) {
+    const removedTagIds = expense.tagIds.filter((tagId) => !tagIds.includes(tagId));
+    const addedTagIds = tagIds.filter((tagId) => !expense.tagIds.includes(tagId));
+    await decrementCategoryTagUsage(db, orgId, expense.categoryId, removedTagIds);
+    await incrementCategoryTagUsage(db, orgId, expense.categoryId, addedTagIds);
+  } else {
+    await decrementCategoryTagUsage(db, orgId, expense.categoryId, expense.tagIds);
+    await incrementCategoryTagUsage(db, orgId, parsed.data.categoryId, tagIds);
+  }
+
   redirect(ROUTES.TRANSACTIONS);
 }
 
@@ -417,6 +439,7 @@ export async function deleteExpenseAction(
     return { error: "Expense does not belong to your organization" };
   }
 
+  await decrementCategoryTagUsage(db, orgId, expense.categoryId, expense.tagIds);
   await deleteExpenseRecord(expense.id);
 
   redirect(ROUTES.TRANSACTIONS);

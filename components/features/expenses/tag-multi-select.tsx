@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { X } from "lucide-react";
 import { createTagInline } from "@/app/actions/auth-roles/tags.actions";
-import type { TagRecordDto } from "@/app/lib/finance.types";
+import type { CategoryTagRecordDto, TagRecordDto } from "@/app/lib/finance.types";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -11,10 +11,14 @@ export function TagMultiSelect({
   tags,
   name,
   defaultSelectedIds = [],
+  categoryTags,
+  categoryId,
 }: {
   tags: TagRecordDto[];
   name: string;
   defaultSelectedIds?: number[];
+  categoryTags?: CategoryTagRecordDto[];
+  categoryId?: number | null;
 }) {
   const [localTags, setLocalTags] = useState<TagRecordDto[]>(tags);
   const [selectedIds, setSelectedIds] = useState<number[]>(defaultSelectedIds);
@@ -35,13 +39,36 @@ export function TagMultiSelect({
   const trimmedQuery = query.trim();
   const loweredQuery = trimmedQuery.toLowerCase();
 
+  const categoryTagUsageById = useMemo(() => {
+    const usageById = new Map<number, number>();
+    if (!categoryId || !categoryTags) return usageById;
+
+    for (const entry of categoryTags) {
+      if (entry.categoryId === categoryId) {
+        usageById.set(entry.tagId, entry.usageCount);
+      }
+    }
+
+    return usageById;
+  }, [categoryTags, categoryId]);
+
   const suggestions = useMemo(() => {
-    return localTags.filter((tag) => {
+    const matches = localTags.filter((tag) => {
       if (selectedIds.includes(tag.id)) return false;
-      if (!loweredQuery) return true;
+      if (!loweredQuery) return categoryTagUsageById.size ? categoryTagUsageById.has(tag.id) : true;
       return tag.name.toLowerCase().includes(loweredQuery);
     });
-  }, [localTags, selectedIds, loweredQuery]);
+
+    if (!categoryTagUsageById.size) return matches;
+
+    return matches
+      .map((tag, index) => ({ tag, index, usage: categoryTagUsageById.get(tag.id) ?? 0 }))
+      .sort((a, b) => {
+        if (b.usage !== a.usage) return b.usage - a.usage;
+        return a.index - b.index;
+      })
+      .map(({ tag }) => tag);
+  }, [localTags, selectedIds, loweredQuery, categoryTagUsageById]);
 
   const canCreate =
     trimmedQuery.length >= 2 &&
@@ -98,6 +125,19 @@ export function TagMultiSelect({
       setIsOpen(false);
     }
   }
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node | null)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [isOpen]);
 
   return (
     <div ref={containerRef} className="relative" onBlur={handleBlur}>

@@ -197,6 +197,24 @@ export const transactionTags = pgTable(
   })
 );
 
+export const categoryTags = pgTable(
+  "category_tags",
+  {
+    id: serial("id").primaryKey(),
+    orgId: integer("org_id").notNull().references(() => organizations.id),
+    categoryId: integer("category_id").notNull().references(() => categories.id, { onDelete: "cascade" }),
+    tagId: integer("tag_id").notNull().references(() => tags.id, { onDelete: "cascade" }),
+    usageCount: integer("usage_count").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    categoryTagUnique: unique("category_tags_category_tag_unique").on(table.categoryId, table.tagId),
+    orgIdx: index("category_tags_org_id_idx").on(table.orgId),
+    categoryIdx: index("category_tags_category_id_idx").on(table.categoryId),
+  })
+);
+
 export const budget = pgTable(
   "budget",
   {
