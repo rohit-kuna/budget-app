@@ -17,6 +17,7 @@ import {
   YAxis,
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -687,187 +688,6 @@ function BudgetVsActualChart({
   );
 }
 
-function CategoryByTypeChart({
-  expenses,
-  monthStart,
-  monthEnd,
-  transactionType,
-  title,
-  description,
-  emptyMessage,
-  totalLabel,
-  topCategoryLabel,
-  topCategoriesLabel,
-  positiveTone,
-}: {
-  expenses: ActivityDashboardDataDto["expenses"];
-  monthStart: string;
-  monthEnd: string;
-  transactionType: CategoryTransactionType;
-  title: string;
-  description: string;
-  emptyMessage: string;
-  totalLabel: string;
-  topCategoryLabel: string;
-  topCategoriesLabel: string;
-  positiveTone: "warning" | "success";
-}) {
-  const chartData = useMemo(() => {
-    const filtered = expenses.filter((expense) => {
-      const expenseMonth = getMonthKey(expense.occurredAt);
-      return expense.type === transactionType && expenseMonth >= monthStart && expenseMonth <= monthEnd;
-    });
-
-    const totalsByCategory = new Map<
-      number,
-      {
-        categoryId: number;
-        categoryName: string;
-        amount: number;
-        color: string;
-      }
-    >();
-
-    const getCategoryColor = (categoryId: number) =>
-      chartPalette[(categoryId - 1) % chartPalette.length] ?? "var(--color-chart-1)";
-
-    for (const expense of filtered) {
-      const existing = totalsByCategory.get(expense.categoryId);
-      totalsByCategory.set(expense.categoryId, {
-        categoryId: expense.categoryId,
-        categoryName: expense.categoryName,
-        amount: (existing?.amount ?? 0) + Number(expense.amount),
-        color: existing?.color ?? getCategoryColor(expense.categoryId),
-      });
-    }
-
-    const sorted = Array.from(totalsByCategory.values()).sort((left, right) => right.amount - left.amount);
-    const totalAmount = sorted.reduce((sum, item) => sum + item.amount, 0);
-
-    return sorted.map((item, index) => ({
-      ...item,
-      rank: index + 1,
-      percentage: totalAmount > 0 ? (item.amount / totalAmount) * 100 : 0,
-      isTopThree: index < 3,
-    }));
-  }, [expenses, monthStart, monthEnd, transactionType]);
-
-  const totals = useMemo(() => {
-    const totalAmount = chartData.reduce((sum, item) => sum + item.amount, 0);
-    return {
-      totalAmount,
-      topCategories: chartData.slice(0, 3),
-    };
-  }, [chartData]);
-
-  const hasData = chartData.length > 0;
-
-  return (
-    <Card className="py-2">
-      <CardHeader className="space-y-4 px-4 pt-6 sm:px-8 sm:pt-8">
-        <SectionHeader
-          title={title}
-          description={description}
-        />
-
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">Range {getMonthLabel(monthStart)} → {getMonthLabel(monthEnd)}</Badge>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6 px-4 pb-6 sm:px-8 sm:pb-8">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <MetricCard
-            label={totalLabel}
-            value={formatMoney(totals.totalAmount)}
-            tone={totals.totalAmount > 0 ? positiveTone : "default"}
-          />
-          <MetricCard label={topCategoryLabel} value={totals.topCategories[0]?.categoryName ?? "—"} />
-          <MetricCard
-            label={topCategoriesLabel}
-            value={
-              totals.totalAmount > 0
-                ? `${(
-                    (totals.topCategories.reduce((sum, item) => sum + item.amount, 0) /
-                      totals.totalAmount) *
-                    100
-                  ).toFixed(0)}%`
-                : "—"
-            }
-            tone="success"
-          />
-        </div>
-
-        {!hasData ? (
-          <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-            {emptyMessage}
-          </div>
-        ) : (
-          <div className="rounded-2xl border bg-muted/10 p-4">
-            <div className="h-[360px] w-full min-w-0 min-h-0 sm:h-[420px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    dataKey="amount"
-                    nameKey="categoryName"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius="75%"
-                    label={({ name, value }) => `${name}: ${formatCompactMoney(Number(value ?? 0))}`}
-                  >
-                    {chartData.map((entry) => (
-                      <Cell
-                        key={entry.categoryId}
-                        fill={entry.isTopThree ? entry.color : "var(--color-chart-5)"}
-                        fillOpacity={entry.isTopThree ? 1 : 0.45}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (!active || !payload?.length) return null;
-                      const entry = payload[0];
-                      const row = entry?.payload as (typeof chartData)[number] | undefined;
-                      if (!row) return null;
-                      return (
-                        <div className="rounded-lg border bg-background px-3 py-2 text-sm shadow-lg">
-                          <p className="mb-1 font-medium">{row.categoryName}</p>
-                          <p>{formatMoney(row.amount)} ({row.percentage.toFixed(1)}%)</p>
-                        </div>
-                      );
-                    }}
-                  />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {chartData.length ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-muted-foreground">{topCategoriesLabel}:</span>
-            {chartData.slice(0, 3).map((item, index) => (
-              <Badge
-                key={item.categoryId}
-                variant="outline"
-                className={cn(
-                  index === 0 && "border-primary/40 bg-primary/5",
-                  index === 1 && "border-chart-2/40 bg-chart-2/5",
-                  index === 2 && "border-chart-3/40 bg-chart-3/5"
-                )}
-              >
-                {item.categoryName} • {item.percentage.toFixed(1)}%
-              </Badge>
-            ))}
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
-  );
-}
-
 function NecessitySpendChart({
   expenses,
   monthStart,
@@ -1212,49 +1032,97 @@ function ExpenseTrendChart({
   );
 }
 
-function CategorySubcategoryOverlapChart({
+function CategoryDrilldownChart({
   expenses,
-  categories,
   monthStart,
   monthEnd,
+  transactionType,
+  title,
+  description,
+  emptyMessage,
+  totalLabel,
+  topCategoryLabel,
+  topCategoriesLabel,
+  positiveTone,
+  breakdownDescription,
+  totalDetailLabel,
+  noSubcategoryLabel,
 }: {
   expenses: ActivityDashboardDataDto["expenses"];
-  categories: ActivityDashboardDataDto["categories"];
   monthStart: string;
   monthEnd: string;
+  transactionType: CategoryTransactionType;
+  title: string;
+  description: string;
+  emptyMessage: string;
+  totalLabel: string;
+  topCategoryLabel: string;
+  topCategoriesLabel: string;
+  positiveTone: "warning" | "success";
+  breakdownDescription: string;
+  totalDetailLabel: string;
+  noSubcategoryLabel: string;
 }) {
-  const categoryOptions = useMemo(() => {
-    const seen = new Map<number, string>();
-    for (const expense of expenses) {
-      if (!seen.has(expense.categoryId)) {
-        seen.set(expense.categoryId, expense.categoryName);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+
+  const categoryChartData = useMemo(() => {
+    const filtered = expenses.filter((expense) => {
+      const expenseMonth = getMonthKey(expense.occurredAt);
+      return expense.type === transactionType && expenseMonth >= monthStart && expenseMonth <= monthEnd;
+    });
+
+    const totalsByCategory = new Map<
+      number,
+      {
+        categoryId: number;
+        categoryName: string;
+        amount: number;
+        color: string;
       }
-    }
-    for (const category of categories) {
-      if (!seen.has(category.id)) {
-        seen.set(category.id, category.name);
-      }
-    }
-    return Array.from(seen.entries())
-      .map(([id, name]) => ({ id, name }))
-      .sort((left, right) => left.name.localeCompare(right.name));
-  }, [expenses, categories]);
+    >();
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+    const getCategoryColor = (categoryId: number) =>
+      chartPalette[(categoryId - 1) % chartPalette.length] ?? "var(--color-chart-1)";
 
-  const effectiveCategoryId = useMemo(() => {
-    if (selectedCategoryId && categoryOptions.some((option) => String(option.id) === selectedCategoryId)) {
-      return selectedCategoryId;
+    for (const expense of filtered) {
+      const existing = totalsByCategory.get(expense.categoryId);
+      totalsByCategory.set(expense.categoryId, {
+        categoryId: expense.categoryId,
+        categoryName: expense.categoryName,
+        amount: (existing?.amount ?? 0) + Number(expense.amount),
+        color: existing?.color ?? getCategoryColor(expense.categoryId),
+      });
     }
-    return categoryOptions[0] ? String(categoryOptions[0].id) : "";
-  }, [selectedCategoryId, categoryOptions]);
 
-  const result = useMemo(() => {
+    const sorted = Array.from(totalsByCategory.values()).sort((left, right) => right.amount - left.amount);
+    const totalAmount = sorted.reduce((sum, item) => sum + item.amount, 0);
+
+    return sorted.map((item, index) => ({
+      ...item,
+      rank: index + 1,
+      percentage: totalAmount > 0 ? (item.amount / totalAmount) * 100 : 0,
+      isTopThree: index < 3,
+    }));
+  }, [expenses, monthStart, monthEnd, transactionType]);
+
+  const totals = useMemo(() => {
+    const totalAmount = categoryChartData.reduce((sum, item) => sum + item.amount, 0);
+    return {
+      totalAmount,
+      topCategories: categoryChartData.slice(0, 3),
+    };
+  }, [categoryChartData]);
+
+  const selectedCategory = categoryChartData.find((item) => item.categoryId === selectedCategoryId) ?? null;
+
+  const subcategoryResult = useMemo(() => {
+    if (!selectedCategory) return null;
+
     const filtered = expenses.filter((expense) => {
       const expenseMonth = getMonthKey(expense.occurredAt);
       return (
-        expense.type === "expense" &&
-        String(expense.categoryId) === effectiveCategoryId &&
+        expense.type === transactionType &&
+        expense.categoryId === selectedCategory.categoryId &&
         expenseMonth >= monthStart &&
         expenseMonth <= monthEnd
       );
@@ -1262,7 +1130,7 @@ function CategorySubcategoryOverlapChart({
 
     const categoryTotal = filtered.reduce((sum, expense) => sum + Number(expense.amount), 0);
 
-    const subcategoryTotals = new Map<number, { id: number; name: string; amount: number }>();
+    const subcategoryTotals = new Map<number, number>();
     let noSubcategoryTotal = 0;
 
     for (const expense of filtered) {
@@ -1271,13 +1139,7 @@ function CategorySubcategoryOverlapChart({
         noSubcategoryTotal += amount;
         continue;
       }
-      const subcategoryName = expense.subcategoryName ?? `Subcategory ${expense.subcategoryId}`;
-      const existing = subcategoryTotals.get(expense.subcategoryId);
-      subcategoryTotals.set(expense.subcategoryId, {
-        id: expense.subcategoryId,
-        name: subcategoryName,
-        amount: (existing?.amount ?? 0) + amount,
-      });
+      subcategoryTotals.set(expense.subcategoryId, (subcategoryTotals.get(expense.subcategoryId) ?? 0) + amount);
     }
 
     const combinationTotals = new Map<string, { label: string; amount: number; count: number }>();
@@ -1306,101 +1168,193 @@ function CategorySubcategoryOverlapChart({
       noSubcategoryTotal,
       combinations,
     };
-  }, [expenses, effectiveCategoryId, monthStart, monthEnd]);
+  }, [expenses, selectedCategory, monthStart, monthEnd, transactionType]);
 
-  const selectedCategoryName =
-    categoryOptions.find((option) => String(option.id) === effectiveCategoryId)?.name ?? "—";
-  const hasData = result.transactionCount > 0;
-  const pieData = result.combinations.filter((combination) => combination.amount > 0);
+  const hasCategoryData = categoryChartData.length > 0;
+  const hasSubcategoryData = (subcategoryResult?.transactionCount ?? 0) > 0;
+  const pieData = subcategoryResult?.combinations.filter((combination) => combination.amount > 0) ?? [];
 
   return (
     <Card className="py-2">
       <CardHeader className="space-y-4 px-4 pt-6 sm:px-8 sm:pt-8">
-        <SectionHeader
-          title="Spend by Subcategory Overlap"
-          description="Pick a category to see how its spending splits across subcategories, including transactions with multiple subcategories at once."
-        />
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <SectionHeader
+            title={selectedCategory ? `${selectedCategory.categoryName} Breakdown` : title}
+            description={selectedCategory ? breakdownDescription : description}
+          />
+          {selectedCategory ? (
+            <Button type="button" variant="outline" size="sm" onClick={() => setSelectedCategoryId(null)}>
+              ← Back to categories
+            </Button>
+          ) : null}
+        </div>
 
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">Range {getMonthLabel(monthStart)} → {getMonthLabel(monthEnd)}</Badge>
         </div>
-
-        <div className="max-w-sm space-y-2">
-          <Label htmlFor="subcategory-overlap-category">Category</Label>
-          {categoryOptions.length ? (
-            <select
-              id="subcategory-overlap-category"
-              value={effectiveCategoryId}
-              onChange={(event) => setSelectedCategoryId(event.target.value)}
-              className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              {categoryOptions.map((option) => (
-                <option key={option.id} value={String(option.id)}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <p className="text-sm text-muted-foreground">No categories available.</p>
-          )}
-        </div>
       </CardHeader>
 
       <CardContent className="space-y-6 px-4 pb-6 sm:px-8 sm:pb-8">
-        {!hasData ? (
-          <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-            No transactions found for {selectedCategoryName} in the selected range.
-          </div>
-        ) : (
+        {!selectedCategory ? (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <MetricCard label="Total spend" value={formatMoney(result.categoryTotal)} tone="warning" />
-              <MetricCard label="Distinct subcategories" value={String(result.distinctSubcategoryCount)} />
-              <MetricCard label="No subcategory spend" value={formatMoney(result.noSubcategoryTotal)} />
+              <MetricCard
+                label={totalLabel}
+                value={formatMoney(totals.totalAmount)}
+                tone={totals.totalAmount > 0 ? positiveTone : "default"}
+              />
+              <MetricCard label={topCategoryLabel} value={totals.topCategories[0]?.categoryName ?? "—"} />
+              <MetricCard
+                label={topCategoriesLabel}
+                value={
+                  totals.totalAmount > 0
+                    ? `${(
+                        (totals.topCategories.reduce((sum, item) => sum + item.amount, 0) /
+                          totals.totalAmount) *
+                        100
+                      ).toFixed(0)}%`
+                    : "—"
+                }
+                tone="success"
+              />
             </div>
 
-            {pieData.length ? (
+            {!hasCategoryData ? (
+              <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                {emptyMessage}
+              </div>
+            ) : (
               <div className="rounded-2xl border bg-muted/10 p-4">
-                <div className="h-[320px] w-full min-w-0 min-h-0 sm:h-[380px]">
+                <div className="h-[360px] w-full min-w-0 min-h-0 sm:h-[420px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={pieData}
+                        data={categoryChartData}
                         dataKey="amount"
-                        nameKey="label"
+                        nameKey="categoryName"
                         cx="50%"
                         cy="50%"
                         outerRadius="75%"
-                        label={({ name, value }) =>
-                          `${name}: ${formatCompactMoney(Number(value ?? 0))}`
-                        }
+                        label={({ name, value }) => `${name}: ${formatCompactMoney(Number(value ?? 0))}`}
+                        onClick={(entry) => {
+                          const row = entry as unknown as { categoryId: number };
+                          setSelectedCategoryId(row.categoryId);
+                        }}
+                        style={{ cursor: "pointer" }}
                       >
-                        {pieData.map((combination, index) => (
+                        {categoryChartData.map((entry) => (
                           <Cell
-                            key={combination.label}
-                            fill={
-                              combination.label === "No subcategory"
-                                ? noSubcategoryColor
-                                : chartPalette[index % chartPalette.length]
-                            }
+                            key={entry.categoryId}
+                            fill={entry.isTopThree ? entry.color : "var(--color-chart-5)"}
+                            fillOpacity={entry.isTopThree ? 1 : 0.45}
                           />
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value, _name, item) => [
-                          `${formatMoney(Number(value ?? 0))} (${(item.payload.percentage as number).toFixed(1)}%)`,
-                          item.payload.label,
-                        ]}
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const entry = payload[0];
+                          const row = entry?.payload as (typeof categoryChartData)[number] | undefined;
+                          if (!row) return null;
+                          return (
+                            <div className="rounded-lg border bg-background px-3 py-2 text-sm shadow-lg">
+                              <p className="mb-1 font-medium">{row.categoryName}</p>
+                              <p>{formatMoney(row.amount)} ({row.percentage.toFixed(1)}%)</p>
+                              <p className="mt-1 text-xs text-muted-foreground">Click to view subcategories</p>
+                            </div>
+                          );
+                        }}
                       />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
               </div>
-            ) : (
-              <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-                No subcategorized transactions found for {selectedCategoryName} in the selected range.
+            )}
+
+            {categoryChartData.length ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-muted-foreground">{topCategoriesLabel}:</span>
+                {categoryChartData.slice(0, 3).map((item, index) => (
+                  <button
+                    key={item.categoryId}
+                    type="button"
+                    onClick={() => setSelectedCategoryId(item.categoryId)}
+                  >
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "cursor-pointer transition-colors hover:bg-accent",
+                        index === 0 && "border-primary/40 bg-primary/5",
+                        index === 1 && "border-chart-2/40 bg-chart-2/5",
+                        index === 2 && "border-chart-3/40 bg-chart-3/5"
+                      )}
+                    >
+                      {item.categoryName} • {item.percentage.toFixed(1)}%
+                    </Badge>
+                  </button>
+                ))}
               </div>
+            ) : null}
+          </>
+        ) : (
+          <>
+            {!hasSubcategoryData ? (
+              <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                No transactions found for {selectedCategory.categoryName} in the selected range.
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <MetricCard label={totalDetailLabel} value={formatMoney(subcategoryResult?.categoryTotal ?? 0)} tone={positiveTone} />
+                  <MetricCard label="Distinct subcategories" value={String(subcategoryResult?.distinctSubcategoryCount ?? 0)} />
+                  <MetricCard label={noSubcategoryLabel} value={formatMoney(subcategoryResult?.noSubcategoryTotal ?? 0)} />
+                </div>
+
+                {pieData.length ? (
+                  <div className="rounded-2xl border bg-muted/10 p-4">
+                    <div className="h-[320px] w-full min-w-0 min-h-0 sm:h-[380px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            dataKey="amount"
+                            nameKey="label"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius="75%"
+                            label={({ name, value }) =>
+                              `${name}: ${formatCompactMoney(Number(value ?? 0))}`
+                            }
+                          >
+                            {pieData.map((combination, index) => (
+                              <Cell
+                                key={combination.label}
+                                fill={
+                                  combination.label === "No subcategory"
+                                    ? noSubcategoryColor
+                                    : chartPalette[index % chartPalette.length]
+                                }
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value, _name, item) => [
+                              `${formatMoney(Number(value ?? 0))} (${(item.payload.percentage as number).toFixed(1)}%)`,
+                              item.payload.label,
+                            ]}
+                          />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                    No subcategorized transactions found for {selectedCategory.categoryName} in the selected range.
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
@@ -1572,43 +1526,40 @@ export function ActivityDashboard({
         ) : null}
 
         {matchesChartQuery("Spending by Category") ? (
-          <CategoryByTypeChart
+          <CategoryDrilldownChart
             expenses={visibleData.expenses}
             monthStart={monthStart}
             monthEnd={monthEnd}
             transactionType="expense"
             title="Spending by Category"
-            description="See which categories consume the most spending across the selected month range."
+            description="See which categories consume the most spending across the selected month range. Click a slice to see its subcategory breakdown."
             emptyMessage="No spending found for the selected range."
             totalLabel="Total spending"
             topCategoryLabel="Top category"
             topCategoriesLabel="Top 3 share"
             positiveTone="warning"
-          />
-        ) : null}
-
-        {matchesChartQuery("Spend by Subcategory Overlap") ? (
-          <CategorySubcategoryOverlapChart
-            expenses={visibleData.expenses}
-            categories={visibleData.categories}
-            monthStart={monthStart}
-            monthEnd={monthEnd}
+            breakdownDescription="Spending split across subcategories, including transactions with multiple subcategories at once."
+            totalDetailLabel="Total spend"
+            noSubcategoryLabel="No subcategory spend"
           />
         ) : null}
 
         {matchesChartQuery("Income by Category") ? (
-          <CategoryByTypeChart
+          <CategoryDrilldownChart
             expenses={visibleData.expenses}
             monthStart={monthStart}
             monthEnd={monthEnd}
             transactionType="income"
             title="Income by Category"
-            description="See which categories bring in the most income across the selected month range."
+            description="See which categories bring in the most income across the selected month range. Click a slice to see its subcategory breakdown."
             emptyMessage="No income found for the selected range."
             totalLabel="Total income"
             topCategoryLabel="Top income category"
             topCategoriesLabel="Top 3 share"
             positiveTone="success"
+            breakdownDescription="Income split across subcategories, including transactions with multiple subcategories at once."
+            totalDetailLabel="Total income"
+            noSubcategoryLabel="No subcategory income"
           />
         ) : null}
 
