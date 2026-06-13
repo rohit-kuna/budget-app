@@ -101,6 +101,24 @@ export const counterParty = pgTable(
   })
 );
 
+export const subcategories = pgTable(
+  "subcategories",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 100 }).notNull(),
+    orgId: integer("org_id").notNull().references(() => organizations.id),
+    categoryId: integer("category_id").notNull().references(() => categories.id, { onDelete: "cascade" }),
+    createdBy: uuid("created_by").notNull().references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    subcategoriesCategoryNameUnique: unique("subcategories_category_name_unique").on(table.categoryId, table.name),
+    subcategoriesOrgIdx: index("subcategories_org_id_idx").on(table.orgId),
+    subcategoriesCategoryIdx: index("subcategories_category_id_idx").on(table.categoryId),
+  })
+);
+
 export const tags = pgTable(
   "tags",
   {
@@ -112,8 +130,8 @@ export const tags = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    tagsOrgNameUnique: unique("tags_org_name_unique").on(table.orgId, table.name),
-    tagsOrgIdx: index("tags_org_id_idx").on(table.orgId),
+    uniqueNamePerOrg: unique("tags_name_org_unique").on(table.name, table.orgId),
+    orgIdx: index("tags_org_id_idx").on(table.orgId),
   })
 );
 
@@ -150,6 +168,9 @@ export const financeTransactions = pgTable(
     transactionModeId: integer("transaction_mode_id").references(() => transactionModes.id, {
       onDelete: "set null",
     }),
+    subcategoryId: integer("subcategory_id").references(() => subcategories.id, {
+      onDelete: "set null",
+    }),
     transferStatus: varchar("transfer_status", { length: 10 }).$type<TransferStatus>(),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
     type: varchar("type", { length: 10 }).notNull().default("expense").$type<ExpenseType>(),
@@ -176,6 +197,7 @@ export const financeTransactions = pgTable(
     categoryIdx: index("finance_transactions_category_id_idx").on(table.categoryId),
     counterPartyIdx: index("finance_transactions_counter_party_id_idx").on(table.counterPartyId),
     transactionModeIdx: index("finance_transactions_transaction_mode_id_idx").on(table.transactionModeId),
+    subcategoryIdx: index("finance_transactions_subcategory_id_idx").on(table.subcategoryId),
     transferStatusIdx: index("finance_transactions_transfer_status_idx").on(table.transferStatus),
     occurredAtIdx: index("finance_transactions_occurred_at_idx").on(table.transactionTimestamp),
   })
@@ -193,25 +215,8 @@ export const transactionTags = pgTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.transactionId, table.tagId] }),
+    transactionIdx: index("transaction_tags_transaction_id_idx").on(table.transactionId),
     tagIdx: index("transaction_tags_tag_id_idx").on(table.tagId),
-  })
-);
-
-export const categoryTags = pgTable(
-  "category_tags",
-  {
-    id: serial("id").primaryKey(),
-    orgId: integer("org_id").notNull().references(() => organizations.id),
-    categoryId: integer("category_id").notNull().references(() => categories.id, { onDelete: "cascade" }),
-    tagId: integer("tag_id").notNull().references(() => tags.id, { onDelete: "cascade" }),
-    usageCount: integer("usage_count").notNull().default(0),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (table) => ({
-    categoryTagUnique: unique("category_tags_category_tag_unique").on(table.categoryId, table.tagId),
-    orgIdx: index("category_tags_org_id_idx").on(table.orgId),
-    categoryIdx: index("category_tags_category_id_idx").on(table.categoryId),
   })
 );
 

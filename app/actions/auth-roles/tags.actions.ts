@@ -2,9 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireUser } from "@/app/lib/auth";
+import { requireAdmin, requireUser } from "@/app/lib/auth";
 import { ROUTES } from "@/app/lib/constants";
-import { getOrganizationById } from "@/app/actions/tables/organizations.table.actions";
 import {
   createTagRecord,
   deleteTagRecord,
@@ -23,17 +22,6 @@ const tagIdSchema = z.object({
   tagId: z.coerce.number().int().positive(),
 });
 
-function normalizeTagName(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function findDuplicateTag(existingTags: TagRecordDto[], name: string, excludeTagId?: number) {
-  const normalizedName = normalizeTagName(name);
-  return existingTags.find(
-    (tag) => tag.id !== excludeTagId && normalizeTagName(tag.name) === normalizedName
-  );
-}
-
 function assertOrgId(currentUser: Awaited<ReturnType<typeof requireUser>>) {
   if (!currentUser.orgId) {
     throw new Error("Create or join an organization first");
@@ -42,57 +30,32 @@ function assertOrgId(currentUser: Awaited<ReturnType<typeof requireUser>>) {
   return currentUser.orgId;
 }
 
-function toOrganizationDto(organization: Awaited<ReturnType<typeof getOrganizationById>>) {
-  if (!organization) return null;
-
-  return {
-    id: organization.id,
-    name: organization.name,
-    createdBy: organization.createdBy,
-    createdAt: organization.createdAt.toISOString(),
-    updatedAt: organization.updatedAt.toISOString(),
-  };
+function normalizeTagName(value: string) {
+  return value.trim().toLowerCase();
 }
 
-export async function getOrganizationTagsData() {
-  const currentUser = await requireUser();
+function findDuplicateTag(existingTags: TagRecordDto[], name: string, excludeTagId?: number) {
+  const normalizedName = normalizeTagName(name);
+  return existingTags.find((tag) => tag.id !== excludeTagId && normalizeTagName(tag.name) === normalizedName);
+}
+
+export async function getOrganizationTagsForAdmin() {
+  const currentUser = await requireAdmin();
 
   if (!currentUser.orgId) {
-    return {
-      organization: null,
-      tags: [],
-      currentUser: {
-        id: currentUser.id,
-        role: currentUser.role,
-        orgId: null,
-      },
-    };
+    return { tags: [] };
   }
 
-  const [organization, tags] = await Promise.all([
-    getOrganizationById(currentUser.orgId),
-    getTagsByOrg(currentUser.orgId),
-  ]);
-
-  return {
-    organization: toOrganizationDto(organization),
-    tags,
-    currentUser: {
-      id: currentUser.id,
-      role: currentUser.role,
-      orgId: currentUser.orgId,
-    },
-  };
+  const tags = await getTagsByOrg(currentUser.orgId);
+  return { tags };
 }
 
 export async function createTagAction(
   _previousState: FinanceActionState,
   formData: FormData
 ): Promise<FinanceActionState> {
-  const currentUser = await requireUser();
-  const parsed = tagSchema.safeParse({
-    name: formData.get("name"),
-  });
+  const currentUser = await requireAdmin();
+  const parsed = tagSchema.safeParse({ name: formData.get("name") });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Unable to create tag" };
@@ -114,56 +77,13 @@ export async function createTagAction(
   redirect(ROUTES.TAGS);
 }
 
-export async function createTagInline(
-  name: string
-): Promise<{ tag: TagRecordDto } | { error: string }> {
-  const currentUser = await requireUser();
-  const parsed = tagSchema.safeParse({ name });
-
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Unable to create tag" };
-  }
-
-  const orgId = assertOrgId(currentUser);
-  const existingTags = await getTagsByOrg(orgId);
-  const existingTag = findDuplicateTag(existingTags, parsed.data.name);
-
-  if (existingTag) {
-    return { tag: existingTag };
-  }
-
-  const record = await createTagRecord({
-    orgId,
-    name: parsed.data.name,
-    createdBy: currentUser.id,
-  });
-
-  if (!record) {
-    return { error: "Unable to create tag" };
-  }
-
-  return {
-    tag: {
-      id: record.id,
-      orgId: record.orgId,
-      name: record.name,
-      createdAt: record.createdAt.toISOString(),
-      updatedAt: record.updatedAt.toISOString(),
-    },
-  };
-}
-
 export async function updateTagAction(
   _previousState: FinanceActionState,
   formData: FormData
 ): Promise<FinanceActionState> {
-  const currentUser = await requireUser();
-  const parsed = tagSchema.safeParse({
-    name: formData.get("name"),
-  });
-  const tagIdResult = tagIdSchema.safeParse({
-    tagId: formData.get("tagId"),
-  });
+  const currentUser = await requireAdmin();
+  const parsed = tagSchema.safeParse({ name: formData.get("name") });
+  const tagIdResult = tagIdSchema.safeParse({ tagId: formData.get("tagId") });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Unable to update tag" };
@@ -197,10 +117,8 @@ export async function deleteTagAction(
   _previousState: FinanceActionState,
   formData: FormData
 ): Promise<FinanceActionState> {
-  const currentUser = await requireUser();
-  const tagIdResult = tagIdSchema.safeParse({
-    tagId: formData.get("tagId"),
-  });
+  const currentUser = await requireAdmin();
+  const tagIdResult = tagIdSchema.safeParse({ tagId: formData.get("tagId") });
 
   if (!tagIdResult.success) {
     return { error: "Tag is required" };
@@ -216,4 +134,42 @@ export async function deleteTagAction(
   await deleteTagRecord(tag.id);
 
   redirect(ROUTES.TAGS);
+}
+
+export async function createTagInline(name: string): Promise<{ tag: TagRecordDto } | { error: string }> {
+  const currentUser = await requireUser();
+  const parsed = tagSchema.safeParse({ name });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Unable to create tag" };
+  }
+
+  const orgId = assertOrgId(currentUser);
+  const existingTags = await getTagsByOrg(orgId);
+  const existingTag = findDuplicateTag(existingTags, parsed.data.name);
+
+  if (existingTag) {
+    return { tag: existingTag };
+  }
+
+  const record = await createTagRecord({
+    orgId,
+    name: parsed.data.name,
+    createdBy: currentUser.id,
+  });
+
+  if (!record) {
+    return { error: "Unable to create tag" };
+  }
+
+  return {
+    tag: {
+      id: record.id,
+      orgId: record.orgId,
+      name: record.name,
+      createdBy: record.createdBy,
+      createdAt: record.createdAt.toISOString(),
+      updatedAt: record.updatedAt.toISOString(),
+    },
+  };
 }

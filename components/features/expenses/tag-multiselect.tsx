@@ -3,84 +3,63 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { X } from "lucide-react";
 import { createTagInline } from "@/app/actions/auth-roles/tags.actions";
-import type { CategoryTagRecordDto, TagRecordDto } from "@/app/lib/finance.types";
-import { Badge } from "@/components/ui/badge";
+import type { TagRecordDto } from "@/app/lib/finance.types";
 import { cn } from "@/lib/utils";
 
 export function TagMultiSelect({
   tags,
-  name,
-  defaultSelectedIds = [],
-  categoryTags,
-  categoryId,
+  defaultSelectedTagIds = [],
 }: {
   tags: TagRecordDto[];
-  name: string;
-  defaultSelectedIds?: number[];
-  categoryTags?: CategoryTagRecordDto[];
-  categoryId?: number | null;
+  defaultSelectedTagIds?: number[];
 }) {
   const [localTags, setLocalTags] = useState<TagRecordDto[]>(tags);
-  const [selectedIds, setSelectedIds] = useState<number[]>(defaultSelectedIds);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>(defaultSelectedTagIds);
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, startCreating] = useTransition();
   const [createError, setCreateError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setLocalTags(tags);
+  }, [tags]);
+
+  const tagsById = useMemo(() => {
+    const map = new Map<number, TagRecordDto>();
+    for (const tag of localTags) {
+      map.set(tag.id, tag);
+    }
+    return map;
+  }, [localTags]);
 
   const selectedTags = useMemo(
-    () =>
-      selectedIds
-        .map((id) => localTags.find((tag) => tag.id === id))
-        .filter((tag): tag is TagRecordDto => Boolean(tag)),
-    [selectedIds, localTags]
+    () => selectedTagIds.map((id) => tagsById.get(id)).filter((tag): tag is TagRecordDto => Boolean(tag)),
+    [selectedTagIds, tagsById]
   );
 
   const trimmedQuery = query.trim();
   const loweredQuery = trimmedQuery.toLowerCase();
 
-  const categoryTagUsageById = useMemo(() => {
-    const usageById = new Map<number, number>();
-    if (!categoryId || !categoryTags) return usageById;
-
-    for (const entry of categoryTags) {
-      if (entry.categoryId === categoryId) {
-        usageById.set(entry.tagId, entry.usageCount);
-      }
-    }
-
-    return usageById;
-  }, [categoryTags, categoryId]);
-
   const suggestions = useMemo(() => {
-    const matches = localTags.filter((tag) => {
-      if (selectedIds.includes(tag.id)) return false;
-      if (!loweredQuery) return categoryTagUsageById.size ? categoryTagUsageById.has(tag.id) : true;
+    return localTags.filter((tag) => {
+      if (selectedTagIds.includes(tag.id)) return false;
+      if (!loweredQuery) return true;
       return tag.name.toLowerCase().includes(loweredQuery);
     });
-
-    if (!categoryTagUsageById.size) return matches;
-
-    return matches
-      .map((tag, index) => ({ tag, index, usage: categoryTagUsageById.get(tag.id) ?? 0 }))
-      .sort((a, b) => {
-        if (b.usage !== a.usage) return b.usage - a.usage;
-        return a.index - b.index;
-      })
-      .map(({ tag }) => tag);
-  }, [localTags, selectedIds, loweredQuery, categoryTagUsageById]);
+  }, [localTags, loweredQuery, selectedTagIds]);
 
   const canCreate =
-    trimmedQuery.length >= 2 &&
-    !localTags.some((tag) => tag.name.toLowerCase() === loweredQuery);
+    trimmedQuery.length >= 2 && !localTags.some((tag) => tag.name.toLowerCase() === loweredQuery);
 
   function addTag(tagId: number) {
-    setSelectedIds((current) => (current.includes(tagId) ? current : [...current, tagId]));
+    setSelectedTagIds((current) => (current.includes(tagId) ? current : [...current, tagId]));
     setQuery("");
   }
 
   function removeTag(tagId: number) {
-    setSelectedIds((current) => current.filter((id) => id !== tagId));
+    setSelectedTagIds((current) => current.filter((id) => id !== tagId));
   }
 
   function handleCreateTag() {
@@ -96,33 +75,47 @@ export function TagMultiSelect({
         return;
       }
 
-      setLocalTags((current) =>
-        current.some((tag) => tag.id === result.tag.id) ? current : [result.tag, ...current]
-      );
+      setLocalTags((current) => (current.some((tag) => tag.id === result.tag.id) ? current : [result.tag, ...current]));
       addTag(result.tag.id);
     });
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Backspace" && !query && selectedIds.length) {
-      setSelectedIds((current) => current.slice(0, -1));
+    if (event.key === "Escape") {
+      setIsOpen(false);
+      setQuery("");
+      inputRef.current?.blur();
       return;
     }
 
     if (event.key === "Enter") {
       event.preventDefault();
+
       const exactMatch = suggestions.find((tag) => tag.name.toLowerCase() === loweredQuery);
       if (exactMatch) {
         addTag(exactMatch.id);
-      } else if (canCreate) {
+        return;
+      }
+
+      if (suggestions.length) {
+        addTag(suggestions[0].id);
+        return;
+      }
+
+      if (canCreate) {
         handleCreateTag();
       }
+    }
+
+    if (event.key === "Backspace" && !query && selectedTagIds.length) {
+      removeTag(selectedTagIds[selectedTagIds.length - 1]);
     }
   }
 
   function handleBlur(event: React.FocusEvent<HTMLDivElement>) {
     if (!containerRef.current?.contains(event.relatedTarget as Node | null)) {
       setIsOpen(false);
+      setQuery("");
     }
   }
 
@@ -132,6 +125,7 @@ export function TagMultiSelect({
     function handlePointerDown(event: PointerEvent) {
       if (!containerRef.current?.contains(event.target as Node | null)) {
         setIsOpen(false);
+        setQuery("");
       }
     }
 
@@ -141,46 +135,51 @@ export function TagMultiSelect({
 
   return (
     <div ref={containerRef} className="relative" onBlur={handleBlur}>
-      {selectedIds.map((id) => (
-        <input key={id} type="hidden" name={name} value={id} />
+      {selectedTagIds.map((tagId) => (
+        <input key={tagId} type="hidden" name="tagIds" value={tagId} />
       ))}
       <div
-        className="flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-sm focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
-        onClick={() => setIsOpen(true)}
+        className="flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 text-sm focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+        onClick={() => inputRef.current?.focus()}
       >
         {selectedTags.map((tag) => (
-          <Badge key={tag.id} variant="secondary" className="gap-1 pr-1">
+          <span
+            key={tag.id}
+            className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground"
+          >
             {tag.name}
             <button
               type="button"
-              onClick={() => removeTag(tag.id)}
-              className="rounded-sm text-muted-foreground transition-colors hover:text-foreground"
+              onClick={(event) => {
+                event.stopPropagation();
+                removeTag(tag.id);
+              }}
+              className="text-muted-foreground transition-colors hover:text-foreground"
               aria-label={`Remove ${tag.name}`}
             >
               <X className="size-3" />
             </button>
-          </Badge>
+          </span>
         ))}
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder={selectedTags.length ? "" : "Type to find tags..."}
-          className="h-7 min-w-32 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          placeholder={selectedTags.length ? "" : "Type to find or create a tag..."}
+          className="min-w-24 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         />
       </div>
-      {isOpen && (suggestions.length || canCreate) ? (
-        <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md border border-border bg-popover p-1 text-sm shadow-md">
+      {isOpen ? (
+        <ul className="absolute z-10 mt-1 max-h-64 w-full overflow-auto rounded-md border border-border bg-popover p-1 text-sm shadow-md">
           {suggestions.map((tag) => (
             <li key={tag.id}>
               <button
                 type="button"
                 onClick={() => addTag(tag.id)}
-                className={cn(
-                  "block w-full rounded-sm px-2 py-1.5 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
-                )}
+                className="block w-full rounded-sm px-2 py-1.5 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 {tag.name}
               </button>
@@ -201,6 +200,7 @@ export function TagMultiSelect({
               </button>
             </li>
           ) : null}
+          {!suggestions.length && !canCreate ? <li className="px-2 py-1.5 text-muted-foreground">No matches</li> : null}
         </ul>
       ) : null}
       {createError ? <p className="mt-1 text-xs text-destructive">{createError}</p> : null}

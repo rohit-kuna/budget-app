@@ -1,18 +1,15 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useMemo, useRef, useState } from "react";
 import { AlertCircle, Trash2 } from "lucide-react";
-import { financeInitialState } from "@/app/actions/auth-roles/finance.types";
-import {
-  createTagAction,
-  deleteTagAction,
-  updateTagAction,
-} from "@/app/actions/auth-roles/tags.actions";
-import type { TagRecordDto } from "@/app/lib/finance.types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { TagRecordDto } from "@/app/lib/finance.types";
+import { financeInitialState } from "@/app/actions/auth-roles/finance.types";
+import { createTagAction, deleteTagAction, updateTagAction } from "@/app/actions/auth-roles/tags.actions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 function ActionError({ message }: { message: string | null }) {
   if (!message) return null;
@@ -28,31 +25,46 @@ function ActionError({ message }: { message: string | null }) {
 function TagRow({ tag }: { tag: TagRecordDto }) {
   const [updateState, updateAction, updatePending] = useActionState(updateTagAction, financeInitialState);
   const [deleteState, deleteAction, deletePending] = useActionState(deleteTagAction, financeInitialState);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const deleteFormRef = useRef<HTMLFormElement>(null);
 
   return (
     <div className="rounded-lg border bg-muted/20 p-4">
-      <form action={updateAction} className="space-y-3">
+      <form action={updateAction} className="flex flex-wrap items-end gap-2">
         <input type="hidden" name="tagId" value={tag.id} />
-        <div className="space-y-2">
-          <Label htmlFor={`tag-${tag.id}`}>Tag name</Label>
-          <Input id={`tag-${tag.id}`} name="name" defaultValue={tag.name} required />
+        <div className="flex-1 space-y-1">
+          <Label htmlFor={`tag-name-${tag.id}`} className="text-xs">
+            Tag name
+          </Label>
+          <Input id={`tag-name-${tag.id}`} name="name" defaultValue={tag.name} required />
         </div>
-        <ActionError message={updateState.error} />
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit" disabled={updatePending}>
-            {updatePending ? "Saving..." : "Save"}
-          </Button>
-        </div>
+        <Button type="submit" size="sm" disabled={updatePending}>
+          {updatePending ? "Saving..." : "Save"}
+        </Button>
       </form>
+      <ActionError message={updateState.error} />
 
-      <form action={deleteAction} className="mt-3">
+      <form ref={deleteFormRef} action={deleteAction} className="mt-3">
         <input type="hidden" name="tagId" value={tag.id} />
         <ActionError message={deleteState.error} />
-        <Button type="submit" variant="outline" className="mt-2" disabled={deletePending}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={deletePending}
+          onClick={() => setConfirmOpen(true)}
+        >
           <Trash2 className="mr-2 size-4" />
           {deletePending ? "Deleting..." : "Delete"}
         </Button>
       </form>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete tag"
+        description={`Are you sure you want to delete "${tag.name}"? This cannot be undone.`}
+        onConfirm={() => deleteFormRef.current?.requestSubmit()}
+      />
     </div>
   );
 }
@@ -64,6 +76,7 @@ export function TagManagement({ tags }: { tags: TagRecordDto[] }) {
   const filteredTags = useMemo(() => {
     const loweredQuery = query.trim().toLowerCase();
     if (!loweredQuery) return tags;
+
     return tags.filter((tag) => tag.name.toLowerCase().includes(loweredQuery));
   }, [tags, query]);
 
@@ -85,8 +98,7 @@ export function TagManagement({ tags }: { tags: TagRecordDto[] }) {
             </Button>
           </form>
           <p className="text-sm text-muted-foreground">
-            All organization members can create, update, and delete tags, then attach them to
-            transactions.
+            Only admin users can create, rename, or delete organization tags.
           </p>
         </CardContent>
       </Card>
@@ -104,7 +116,7 @@ export function TagManagement({ tags }: { tags: TagRecordDto[] }) {
                   id="tag-search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search by tag name..."
+                  placeholder="Search by name..."
                 />
               </div>
               {filteredTags.length ? (
@@ -121,7 +133,7 @@ export function TagManagement({ tags }: { tags: TagRecordDto[] }) {
             </>
           ) : (
             <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-              No tags yet. Create one to label and organize transactions.
+              No tags yet. Create the first tag to start labeling transactions.
             </div>
           )}
         </CardContent>
