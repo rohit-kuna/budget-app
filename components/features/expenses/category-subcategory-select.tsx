@@ -341,14 +341,14 @@ export function CategorySubcategorySelect({
         placeholder="Type to find a category or subcategory..."
         className={cn(
           "h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          selectedCategory && arrowIndex < 0 ? "pr-32" : null
+          selectedCategory && arrowIndex < 0 ? "sm:pr-32" : null
         )}
       />
       {selectedCategory && arrowIndex < 0 ? (
         <button
           type="button"
           onClick={handleAddSubcategoryHint}
-          className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="mt-1 text-xs text-muted-foreground transition-colors hover:text-foreground sm:absolute sm:inset-y-0 sm:right-2 sm:mt-0 sm:flex sm:items-center"
         >
           Press &gt; to add subcategory
         </button>
