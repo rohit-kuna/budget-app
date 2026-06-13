@@ -148,16 +148,8 @@ export function CategorySubcategorySelect({
     setSelectedCategoryId(categoryId);
     setSelectedSubcategoryId(null);
     onCategoryChange(categoryId);
-
-    const category = categoriesById.get(categoryId);
-    const hasSubcategories = localSubcategories.some((subcategory) => subcategory.categoryId === categoryId);
-    if (category && hasSubcategories) {
-      setQuery(category.name);
-      setIsOpen(true);
-    } else {
-      setQuery("");
-      setIsOpen(false);
-    }
+    setQuery("");
+    setIsOpen(false);
   }
 
   function selectSubcategory(categoryId: number, subcategoryId: number) {
@@ -340,7 +332,10 @@ export function CategorySubcategorySelect({
         ref={inputRef}
         type="text"
         value={isOpen ? query : displayValue}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) => {
+          if (!isOpen) setIsOpen(true);
+          setQuery(event.target.value);
+        }}
         onFocus={handleFocus}
         onKeyDown={handleKeyDown}
         placeholder="Type to find a category or subcategory..."
