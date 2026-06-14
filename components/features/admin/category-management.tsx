@@ -19,6 +19,7 @@ import {
   updateSubcategoryAction,
 } from "@/app/actions/auth-roles/subcategories.actions";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CategoryHierarchyChart } from "@/components/features/admin/category-hierarchy-chart";
 import { ROUTES } from "@/app/lib/constants";
 
 function ActionError({ message }: { message: string | null }) {
@@ -209,6 +210,8 @@ export function CategoryManagement({
 
   return (
     <section className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+      <CategoryHierarchyChart categories={categories} subcategories={subcategories} />
+
       <Card className="border-primary/20 bg-primary/5 py-2">
         <CardHeader className="px-4 pt-6 sm:px-8 sm:pt-8">
           <CardTitle className="text-2xl tracking-tight">Create category</CardTitle>
